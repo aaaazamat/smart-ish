@@ -1,0 +1,30 @@
+services:
+  - type: web
+    name: oson-ish-backend
+    runtime: python
+    plan: free
+    buildCommand: "./build.sh"
+    startCommand: "cd config && gunicorn config.wsgi:application"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.0
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+      - key: ALLOWED_HOSTS
+        value: ".onrender.com"
+      - key: CORS_ALLOW_ALL_ORIGINS
+        value: "False"
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false  # Vercel domainini qo'lda kiritasiz
+      - key: GEMINI_API_KEY
+        sync: false  # Qo'lda kiritasiz
+      - key: DATABASE_URL
+        fromDatabase:
+          name: oson-ish-db
+          property: connectionString
+
+databases:
+  - name: oson-ish-db
+    plan: free

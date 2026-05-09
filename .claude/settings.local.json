@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(C:/Users/Azamat/PycharmProjects/Diplom_project/.venv/Scripts/python.exe C:/Users/Azamat/PycharmProjects/Diplom_project/config/manage.py makemigrations main_project_app)",
+      "Bash(C:/Users/Azamat/PycharmProjects/Diplom_project/.venv/Scripts/pip.exe list *)",
+      "Bash(C:/Users/Azamat/PycharmProjects/Diplom_project/.venv/Scripts/pip.exe install *)",
+      "Bash(C:/Users/Azamat/PycharmProjects/Diplom_project/.venv/Scripts/pip.exe show *)",
+      "Bash(C:/Users/Azamat/PycharmProjects/Diplom_project/.venv/Scripts/python.exe C:/Users/Azamat/PycharmProjects/Diplom_project/config/manage.py migrate)",
+      "Bash(../.venv/Scripts/python.exe -c ' *)",
+      "Bash(../.venv/Scripts/python.exe manage.py bootstrap_admin --phone +998901234567 --email admin@diplom.uz --password admin12345)",
+      "PowerShell(node --version)",
+      "PowerShell(npm --version)",
+      "PowerShell($env:Path = [System.Environment]::GetEnvironmentVariable\\(\"Path\",\"Machine\"\\) + \";\" + [System.Environment]::GetEnvironmentVariable\\(\"Path\",\"User\"\\); node --version; npm --version)",
+      "PowerShell($env:Path = [System.Environment]::GetEnvironmentVariable\\(\"Path\",\"Machine\"\\) + \";\" + [System.Environment]::GetEnvironmentVariable\\(\"Path\",\"User\"\\); npm create vite@latest frontend --yes --% -- --template react)",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\Azamat\\\\PycharmProjects\\\\Diplom_project\\\\frontend\" -Force | Where-Object { $_.Name -ne \"node_modules\" } | Format-Table Name, Mode)",
+      "PowerShell(try { $r = Invoke-WebRequest -Uri \"http://localhost:8000/api/vacancies/\" -TimeoutSec 3 -UseBasicParsing; Write-Output \"STATUS: $\\($r.StatusCode\\)\"; $r.Content.Substring\\(0, [Math]::Min\\(500, $r.Content.Length\\)\\) } catch { Write-Output \"ERROR: $\\($_.Exception.Message\\)\" })",
+      "Bash(git init *)",
+      "Bash(git add *)",
+      "Bash(git -c user.name=\"Azamat\" -c user.email=\"azamatsaribaev47@gmail.com\" commit -m \"Initial commit: full job board with AI features\")"
+    ]
+  }
+}

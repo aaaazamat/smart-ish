@@ -1,0 +1,95 @@
+# ─────────────────────────────────────────────
+# MAXFIYLIK / KONFIGURATSIYA
+# ─────────────────────────────────────────────
+.env
+.env.local
+.env.production
+*.env
+
+# ─────────────────────────────────────────────
+# PYTHON
+# ─────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+develop-eggs/
+downloads/
+eggs/
+.eggs/
+parts/
+sdist/
+wheels/
+share/python-wheels/
+MANIFEST
+.installed.cfg
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+
+# ─────────────────────────────────────────────
+# DJANGO
+# ─────────────────────────────────────────────
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+db.sqlite3-wal
+db.sqlite3-shm
+media/
+staticfiles/
+/static/
+
+# ─────────────────────────────────────────────
+# VIRTUAL ENVIRONMENTS
+# ─────────────────────────────────────────────
+.venv/
+venv/
+env/
+ENV/
+.env.bak/
+
+# ─────────────────────────────────────────────
+# IDE
+# ─────────────────────────────────────────────
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ─────────────────────────────────────────────
+# OS
+# ─────────────────────────────────────────────
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+
+# ─────────────────────────────────────────────
+# FRONTEND (Vite + React)
+# ─────────────────────────────────────────────
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+frontend/.cache/
+frontend/coverage/
+frontend/.env.local
+
+# ─────────────────────────────────────────────
+# CELERY (kelajakda)
+# ─────────────────────────────────────────────
+celerybeat-schedule
+celerybeat.pid
