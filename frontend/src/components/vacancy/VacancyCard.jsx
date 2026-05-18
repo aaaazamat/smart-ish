@@ -22,7 +22,7 @@ function VacancyCard({ vacancy }) {
   return (
     <Link
       to={`/vacancies/${id}`}
-      className="block bg-white rounded-2xl border border-gray-200 p-6 hover:border-brand-300 hover:shadow-sm transition group"
+      className="block bg-white rounded-2xl border border-gray-200 p-6 hover:border-brand-300 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 group"
     >
       <div className="flex justify-between items-start gap-4">
         <div className="min-w-0 flex-1">

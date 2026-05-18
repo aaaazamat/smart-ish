@@ -82,6 +82,60 @@ Frontend: http://localhost:5173
 GEMINI_API_KEY=AIza...
 ```
 
+## ⏰ Rejalashtirilgan vazifalar (cron)
+
+Loyihada 2 ta avtomatlashtirilgan vazifa bor — har kuni ishga tushishi kerak:
+
+### 1. Muddati o'tgan vakansiyalarni yopish
+
+```bash
+python config/manage.py close_expired_vacancies
+```
+
+Har kuni `expires_at < bugun` bo'lgan faol vakansiyalarni `is_active=False` qilib qo'yadi va egasiga in-app bildirishnoma yuboradi.
+
+### 2. Eskirgan OTP kodlarni o'chirish
+
+```bash
+python config/manage.py cleanup_otp
+```
+
+Ishlatilgan va muddati tugagan OTP kodlarni bazadan o'chiradi (1 sutka saqlanadi).
+
+### Cron sozlash
+
+**Linux/Mac (crontab -e):**
+```cron
+# Har kuni 02:00 — OTP tozalash
+0 2 * * * cd /path/to/project && /path/to/.venv/bin/python config/manage.py cleanup_otp
+
+# Har kuni 03:00 — muddati o'tgan vakansiyalar
+0 3 * * * cd /path/to/project && /path/to/.venv/bin/python config/manage.py close_expired_vacancies
+```
+
+**Windows Task Scheduler:**
+1. `Task Scheduler` ni oching → `Create Basic Task`
+2. Daily, 03:00 va Daily 02:00 uchun ikkita task
+3. Action: `Start a program`
+4. Program: `C:\path\to\.venv\Scripts\python.exe`
+5. Arguments: `C:\path\to\config\manage.py close_expired_vacancies`
+
+**Render.com (production):**
+`Cron Jobs` bo'limidan yangi job qo'shing:
+```
+Schedule: 0 3 * * *
+Command: cd config && python manage.py close_expired_vacancies
+```
+
+### Sinash (xavfsiz)
+
+Haqiqiy o'zgartirishlardan oldin `--dry-run` bilan tekshirish mumkin:
+
+```bash
+python config/manage.py close_expired_vacancies --dry-run
+python config/manage.py cleanup_otp --dry-run
+```
+
 ## ☁️ Production deploy
 
 ### Backend → Render

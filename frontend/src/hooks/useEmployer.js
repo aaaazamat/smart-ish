@@ -2,6 +2,27 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { employerApi } from '@/api/endpoints'
 
 const VACANCIES_KEY = ['employer-vacancies']
+const ORG_KEY = ['employer-organization']
+
+/** Employer'ning tashkilot ma'lumotlari (logo va h.k.) */
+export function useEmployerOrganization() {
+  return useQuery({
+    queryKey: ORG_KEY,
+    queryFn: employerApi.getOrganization,
+  })
+}
+
+/** Tashkilot ma'lumotlarini tahrirlash (logo bilan birga ham) */
+export function useUpdateEmployerOrganization() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: employerApi.updateOrganization,
+    onSuccess: (data) => {
+      qc.setQueryData(ORG_KEY, data)
+      qc.invalidateQueries({ queryKey: ['me'] })
+    },
+  })
+}
 
 export function useEmployerVacancies() {
   return useQuery({

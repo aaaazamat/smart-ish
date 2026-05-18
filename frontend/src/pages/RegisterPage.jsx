@@ -17,6 +17,7 @@ import Input from '@/components/ui/Input'
 import Select from '@/components/ui/Select'
 import Button from '@/components/ui/Button'
 import FormField from '@/components/ui/FormField'
+import Logo from '@/components/ui/Logo'
 
 function RoleTabs({ value, onChange }) {
   const tabs = [
@@ -27,16 +28,17 @@ function RoleTabs({ value, onChange }) {
     <div className="grid grid-cols-2 gap-2 mb-6 p-1 bg-gray-100 rounded-xl">
       {tabs.map((t) => {
         const Icon = t.icon
+        const active = value === t.value
         return (
           <button
             key={t.value}
             type="button"
             onClick={() => onChange(t.value)}
             className={cn(
-              'flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition',
-              value === t.value
-                ? 'bg-white text-brand-500 shadow-sm'
-                : 'text-gray-600 hover:text-gray-900'
+              'flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-all duration-300',
+              active
+                ? 'smartish-gradient-bg text-white shadow-lg shadow-purple-500/30 scale-105'
+                : 'text-gray-600 hover:text-gray-900 hover:bg-white/50'
             )}
           >
             <Icon className="w-4 h-4" />
@@ -92,9 +94,16 @@ function StepEmail({ onSent }) {
           />
         </FormField>
 
-        <Button type="submit" size="lg" className="w-full mt-2" loading={sendOtp.isPending}>
-          Kod yuborish
-        </Button>
+        <button
+          type="submit"
+          disabled={sendOtp.isPending}
+          className="w-full h-14 mt-2 smartish-gradient-bg text-white font-semibold rounded-xl shadow-lg shadow-purple-500/30 hover:shadow-2xl hover:shadow-purple-500/50 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100"
+        >
+          {sendOtp.isPending && (
+            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+          )}
+          {sendOtp.isPending ? 'Yuborilmoqda...' : 'Kod yuborish'}
+        </button>
       </form>
     </>
   )
@@ -159,9 +168,16 @@ function StepJobSeeker({ email, onBack }) {
         <FormField label="Parolni takrorlang" error={errors.password_confirm?.message}>
           <Input type="password" autoComplete="new-password" placeholder="Yana bir bor" error={!!errors.password_confirm} {...register('password_confirm')} />
         </FormField>
-        <Button type="submit" size="lg" className="w-full mt-2" loading={registerMutation.isPending}>
-          Ro'yxatdan o'tish
-        </Button>
+        <button
+          type="submit"
+          disabled={registerMutation.isPending}
+          className="w-full h-14 mt-2 smartish-gradient-bg text-white font-semibold rounded-xl shadow-lg shadow-purple-500/30 hover:shadow-2xl hover:shadow-purple-500/50 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100"
+        >
+          {registerMutation.isPending && (
+            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+          )}
+          {registerMutation.isPending ? "Saqlanmoqda..." : "Ro'yxatdan o'tish"}
+        </button>
       </form>
     </>
   )
@@ -242,9 +258,16 @@ function StepEmployer({ email, onBack }) {
         <FormField label="Parolni takrorlang" error={errors.password_confirm?.message}>
           <Input type="password" autoComplete="new-password" placeholder="Yana bir bor" error={!!errors.password_confirm} {...register('password_confirm')} />
         </FormField>
-        <Button type="submit" size="lg" className="w-full mt-2" loading={registerMutation.isPending}>
-          Ro'yxatdan o'tish
-        </Button>
+        <button
+          type="submit"
+          disabled={registerMutation.isPending}
+          className="w-full h-14 mt-2 smartish-gradient-bg text-white font-semibold rounded-xl shadow-lg shadow-purple-500/30 hover:shadow-2xl hover:shadow-purple-500/50 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100"
+        >
+          {registerMutation.isPending && (
+            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+          )}
+          {registerMutation.isPending ? "Saqlanmoqda..." : "Ro'yxatdan o'tish"}
+        </button>
       </form>
     </>
   )
@@ -260,33 +283,68 @@ function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-4 py-8">
-      <Link to="/" className="flex items-center gap-3 mb-8">
-        <div className="w-12 h-12 rounded-full bg-brand-500 flex items-center justify-center">
-          <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
-            <path d="M5 12.5l4.5 4.5L19 7.5" />
-          </svg>
+    <div className="relative min-h-screen flex flex-col items-center justify-center px-4 py-8 overflow-hidden">
+      {/* Animated gradient background */}
+      <div className="absolute inset-0 animated-gradient-bg opacity-95" />
+      <div className="absolute inset-0 bg-gradient-to-br from-purple-950/40 via-transparent to-pink-900/40" />
+      <div className="absolute inset-0 bg-grid-dark opacity-30" />
+
+      {/* Floating blobs */}
+      <div className="absolute -top-32 -left-32 w-[420px] h-[420px] bg-orange-500/35 rounded-full blur-3xl animate-float-slow" />
+      <div className="absolute -bottom-32 -right-32 w-[420px] h-[420px] bg-pink-500/40 rounded-full blur-3xl animate-float-reverse" />
+      <div className="absolute top-1/3 right-1/4 w-[280px] h-[280px] bg-purple-500/30 rounded-full blur-3xl animate-pulse-slow" />
+
+      {/* Twinkling stars */}
+      <div className="absolute inset-0 pointer-events-none">
+        {[
+          { top: '8%', left: '20%', delay: '0.2s', size: 4 },
+          { top: '15%', left: '75%', delay: '0.9s', size: 3 },
+          { top: '50%', left: '8%', delay: '1.4s', size: 4 },
+          { top: '70%', left: '92%', delay: '0.5s', size: 3 },
+          { top: '85%', left: '40%', delay: '2s', size: 4 },
+          { top: '30%', left: '85%', delay: '1.7s', size: 3 },
+        ].map((s, i) => (
+          <div
+            key={i}
+            className="absolute rounded-full bg-white animate-twinkle"
+            style={{
+              top: s.top,
+              left: s.left,
+              width: `${s.size}px`,
+              height: `${s.size}px`,
+              animationDelay: s.delay,
+              boxShadow: '0 0 12px white',
+            }}
+          />
+        ))}
+      </div>
+
+      {/* Content */}
+      <div className="relative z-10 w-full max-w-md">
+        <div className="mb-8 flex justify-center animate-fade-in-down">
+          <Logo size="lg" invert />
         </div>
-        <div className="text-2xl font-extrabold text-brand-500">OSON ISH</div>
-      </Link>
 
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
-        {!email && <RoleTabs value={role} onChange={handleRoleChange} />}
+        <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl shadow-purple-900/30 border border-white/40 p-8 animate-bounce-in">
+          {!email && <RoleTabs value={role} onChange={handleRoleChange} />}
 
-        {!email ? (
-          <StepEmail onSent={setEmail} />
-        ) : role === 'job_seeker' ? (
-          <StepJobSeeker email={email} onBack={() => setEmail(null)} />
-        ) : (
-          <StepEmployer email={email} onBack={() => setEmail(null)} />
-        )}
+          <div key={`${role}-${email || 'no-email'}`} className="animate-fade-in-up">
+            {!email ? (
+              <StepEmail onSent={setEmail} />
+            ) : role === 'job_seeker' ? (
+              <StepJobSeeker email={email} onBack={() => setEmail(null)} />
+            ) : (
+              <StepEmployer email={email} onBack={() => setEmail(null)} />
+            )}
+          </div>
 
-        <p className="mt-6 text-sm text-gray-600 text-center">
-          Allaqachon akkauntingiz bormi?{' '}
-          <Link to="/login" className="text-brand-500 font-medium hover:underline">
-            Tizimga kiring
-          </Link>
-        </p>
+          <p className="mt-6 text-sm text-gray-600 text-center">
+            Allaqachon akkauntingiz bormi?{' '}
+            <Link to="/login" className="smartish-gradient-text font-bold hover:underline">
+              Tizimga kiring
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   )

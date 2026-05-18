@@ -1,5 +1,6 @@
 import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { useState, useRef, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   Heart,
   Bell,
@@ -14,59 +15,36 @@ import { cn } from '@/lib/cn'
 import { useAuthStore } from '@/store/authStore'
 import { useMe, useLogout } from '@/hooks/useAuth'
 import { useUnreadCount } from '@/hooks/useNotifications'
+import Logo from '@/components/ui/Logo'
+import LanguageSwitcher from '@/components/ui/LanguageSwitcher'
 
+// Navigatsiya kalitlari (i18n orqali tarjima qilinadi)
 const NAV_BY_ROLE = {
   guest: [
-    { to: '/vacancies', label: "Bo'sh ish o'rinlari" },
-    { to: '/resumes', label: 'Rezyumelar' },
+    { to: '/vacancies', key: 'nav.vacancies' },
+    { to: '/resumes', key: 'nav.resumes' },
   ],
   job_seeker: [
-    { to: '/vacancies', label: 'Vakansiyalar' },
-    { to: '/applications', label: 'Arizalarim' },
-    { to: '/resumes/my', label: 'Mening rezyumem' },
+    { to: '/vacancies', key: 'nav.vacancies' },
+    { to: '/applications', key: 'nav.applications' },
+    { to: '/resumes/my', key: 'nav.my_resume' },
   ],
   employer: [
-    { to: '/employer/dashboard', label: 'Dashboard' },
-    { to: '/employer/vacancies', label: 'Vakansiyalarim' },
-    { to: '/employer/resumes', label: 'Rezyumelarni qidirish' },
-    { to: '/employer/applications', label: 'Arizalar' },
+    { to: '/employer/dashboard', key: 'nav.employer_dashboard' },
+    { to: '/employer/vacancies', key: 'nav.vacancies' },
+    { to: '/employer/resumes', key: 'nav.resumes' },
+    { to: '/employer/applications', key: 'application.status' },
   ],
   admin: [
-    { to: '/admin/dashboard', label: 'Statistika' },
-    { to: '/admin/users', label: 'Foydalanuvchilar' },
-    { to: '/admin/moderation', label: 'Moderatsiya' },
-    { to: '/admin/reference', label: 'Ma\'lumotnoma' },
-    { to: '/admin/reports', label: 'Shikoyatlar' },
+    { to: '/admin/dashboard', key: 'nav.admin_panel' },
+    { to: '/admin/users', key: 'nav.profile' },
+    { to: '/admin/moderation', key: 'common.edit' },
+    { to: '/admin/reference', key: 'common.search' },
+    { to: '/admin/reports', key: 'common.error' },
   ],
 }
 
-function Logo() {
-  return (
-    <Link to="/" className="flex items-center gap-3 shrink-0">
-      <div className="w-11 h-11 rounded-full bg-brand-500 flex items-center justify-center shadow-sm">
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="white"
-          strokeWidth="3.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className="w-5 h-5"
-        >
-          <path d="M5 12.5l4.5 4.5L19 7.5" />
-        </svg>
-      </div>
-      <div className="leading-tight">
-        <div className="text-xl font-extrabold text-brand-500 tracking-wide">
-          OSON ISH
-        </div>
-        <div className="text-[9px] text-gray-400 tracking-[0.18em] mt-0.5">
-          BIZ BILAN BARCHASI OSON
-        </div>
-      </div>
-    </Link>
-  )
-}
+// Logo komponenti @/components/ui/Logo'da
 
 function IconButton({ children, label, ...props }) {
   return (
@@ -99,6 +77,7 @@ function IconLink({ to, label, badge, children }) {
 }
 
 function ProfileMenu() {
+  const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const navigate = useNavigate()
   const ref = useRef(null)
@@ -147,7 +126,7 @@ function ProfileMenu() {
             className="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50"
           >
             <UserCircle className="w-4 h-4" />
-            Mening profilim
+            {t('nav.profile')}
           </Link>
           {user?.role === 'job_seeker' && (
             <Link
@@ -156,7 +135,7 @@ function ProfileMenu() {
               className="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50"
             >
               <FileText className="w-4 h-4" />
-              Mening rezyumem
+              {t('nav.my_resume')}
             </Link>
           )}
           <button
@@ -165,7 +144,7 @@ function ProfileMenu() {
             className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 border-t border-gray-100"
           >
             <LogOut className="w-4 h-4" />
-            Tizimdan chiqish
+            {t('nav.logout')}
           </button>
         </div>
       )}
@@ -174,6 +153,7 @@ function ProfileMenu() {
 }
 
 function Header() {
+  const { t } = useTranslation()
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
   const user = useAuthStore((s) => s.user)
   useMe()
@@ -204,7 +184,7 @@ function Header() {
                 )
               }
             >
-              {link.label}
+              {t(link.key)}
             </NavLink>
           ))}
         </nav>
@@ -214,13 +194,8 @@ function Header() {
             <HelpCircle className="w-6 h-6" />
           </IconButton>
 
-          <button
-            type="button"
-            className="hidden sm:flex items-center gap-1 px-2 py-1.5 text-gray-700 hover:bg-gray-50 rounded transition"
-          >
-            <span className="text-sm font-medium">O'zb</span>
-            <ChevronDown className="w-4 h-4" />
-          </button>
+          <LanguageSwitcher />
+
 
           {isAuthenticated && !isEmployer && !isAdmin ? (
             <IconLink to="/vacancies/liked" label="Sevimlilar">
@@ -253,7 +228,7 @@ function Header() {
               to="/login"
               className="ml-2 px-4 py-2 rounded-lg bg-brand-500 text-white text-sm font-medium hover:bg-brand-600 transition"
             >
-              Kirish
+              {t('nav.login')}
             </Link>
           )}
         </div>

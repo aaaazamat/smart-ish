@@ -29,6 +29,7 @@ from .views import (
     OTPSendView, RegisterJobSeekerView, RegisterEmployerView,
     LoginView, LogoutView, ProfileView,
     PasswordResetRequestView, PasswordResetConfirmView,
+    PasswordChangeView,
     # reference
     RegionListView, DistrictListView, ProfessionListView, SkillListView,
     UniversityListView, UniversityDirectionListView, IndustryListView,
@@ -39,7 +40,7 @@ from .views import (
     VacancyLikeToggleView, LikedVacancyListView,
     # resume
     PublicResumeListView, PublicResumeDetailView, PublicResumeSimilarView,
-    MyResumeView,
+    MyResumeView, MyResumeViewsView,
     WorkExperienceListCreateView, WorkExperienceDetailView,
     EducationListCreateView, EducationDetailView,
     CertificateListCreateView, CertificateDetailView,
@@ -47,6 +48,7 @@ from .views import (
     ApplyToVacancyView, MyApplicationListView,
     MyApplicationDetailView, MyApplicationStatsView,
     # 🟢 EMPLOYER
+    EmployerOrganizationView,
     EmployerVacancyListCreateView, EmployerVacancyDetailView,
     EmployerVacancyToggleActiveView, EmployerVacancyApplicationsView,
     EmployerVacancyMatchedResumesView,
@@ -58,6 +60,7 @@ from .views import (
     EmployerVacancyTimelineView,
     GenerateVacancyDescriptionView, AiChatView, AiMatchView,
     AiVacancyTopMatchedResumesView, AiTopVacanciesForMeView,
+    AiTaskStatusView,
     # 🔔 NOTIFICATIONS
     NotificationListView, NotificationUnreadCountView,
     NotificationMarkReadView, NotificationMarkAllReadView,
@@ -74,6 +77,7 @@ urlpatterns = [
     path("auth/me/",                      ProfileView.as_view(),            name="profile"),
     path("auth/password-reset/request/",  PasswordResetRequestView.as_view(), name="password-reset-request"),
     path("auth/password-reset/confirm/",  PasswordResetConfirmView.as_view(), name="password-reset-confirm"),
+    path("auth/change-password/",         PasswordChangeView.as_view(),       name="change-password"),
 
     # ─── REFERENCE ──────────────────────────────
     path("reference/regions/",            RegionListView.as_view(),             name="regions"),
@@ -100,6 +104,7 @@ urlpatterns = [
     # ─── REZYUMELAR ─────────────────────────────
     # Diqqat: "my/" "<int:pk>/" dan oldin
     path("resumes/my/",                                 MyResumeView.as_view(),                    name="my-resume"),
+    path("resumes/my/views/",                           MyResumeViewsView.as_view(),               name="my-resume-views"),
     path("resumes/my/work-experiences/",                WorkExperienceListCreateView.as_view(),    name="work-exp-list"),
     path("resumes/my/work-experiences/<int:pk>/",       WorkExperienceDetailView.as_view(),        name="work-exp-detail"),
     path("resumes/my/educations/",                      EducationListCreateView.as_view(),         name="education-list"),
@@ -123,6 +128,8 @@ urlpatterns = [
          AiMatchView.as_view(), name="ai-match"),
     path("ai/top-vacancies-for-me/",
          AiTopVacanciesForMeView.as_view(), name="ai-top-vacancies-for-me"),
+    path("ai/tasks/<str:task_id>/",
+         AiTaskStatusView.as_view(), name="ai-task-status"),
     path("employer/vacancies/<int:vacancy_id>/ai-top-resumes/",
          AiVacancyTopMatchedResumesView.as_view(), name="ai-top-resumes"),
     path("employer/ai/generate-description/",
@@ -131,6 +138,8 @@ urlpatterns = [
     # ═══════════════════════════════════════════
     # 🟢 EMPLOYER — VAKANSIYA BOSHQARUVI
     # ═══════════════════════════════════════════
+    path("employer/organization/",
+         EmployerOrganizationView.as_view(), name="employer-organization"),
     path("employer/vacancies/",
          EmployerVacancyListCreateView.as_view(), name="employer-vacancy-list"),
     path("employer/vacancies/<int:pk>/",

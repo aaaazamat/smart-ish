@@ -14,7 +14,7 @@ from .models import (
     Organization,
     Resume, ResumeLanguage, WorkExperience, Education, Certificate,
     Vacancy, VacancyLanguageRequirement, VacancyLike,
-    Application, Notification,
+    Application, Notification, ResumeView,
 )
 
 
@@ -268,6 +268,48 @@ class ResumeWriteSerializer(serializers.ModelSerializer):
         return instance
 
 
+# ──────────────────────────────────────────────
+# REZYUMENI KIM KO'RDI — job seeker uchun
+# ──────────────────────────────────────────────
+
+class MyResumeViewSerializer(serializers.ModelSerializer):
+    """
+    Job seeker o'z rezyumesini kim ko'rganini ko'rish uchun.
+    Maxfiylik uchun viewer'ning telefon va emaili ko'rsatilmaydi —
+    faqat tashkilot nomi va sana qaytariladi.
+    """
+    organization_name = serializers.SerializerMethodField()
+    organization_logo = serializers.SerializerMethodField()
+    role_display = serializers.CharField(source="viewer.get_role_display", read_only=True)
+
+    class Meta:
+        model = ResumeView
+        fields = [
+            "id",
+            "organization_name",
+            "organization_logo",
+            "role_display",
+            "viewed_at",
+        ]
+
+    def get_organization_name(self, obj):
+        if obj.viewer and obj.viewer.organization:
+            return obj.viewer.organization.name
+        return None
+
+    def get_organization_logo(self, obj):
+        request = self.context.get("request")
+        if obj.viewer and obj.viewer.organization and obj.viewer.organization.logo:
+            try:
+                url = obj.viewer.organization.logo.url
+            except Exception:
+                return None
+            if request:
+                return request.build_absolute_uri(url)
+            return url
+        return None
+
+
 class ResumeSimilarSerializer(serializers.ModelSerializer):
     profession_name = serializers.CharField(source="profession.name", read_only=True)
     region_name = serializers.CharField(source="region.name", read_only=True)
@@ -426,7 +468,7 @@ class ApplicationCreateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         application = Application.objects.create(**validated_data)
-        # Employer'ga bildirishnoma
+        # Employer'ga in-app bildirishnoma
         vacancy = application.vacancy
         candidate = f"{application.resume.last_name} {application.resume.first_name}".strip()
         profession = vacancy.profession.name if vacancy.profession else "vakansiyangiz"
@@ -439,6 +481,9 @@ class ApplicationCreateSerializer(serializers.ModelSerializer):
             vacancy=vacancy,
             resume=application.resume,
         )
+        # Email orqali xabar (fail-silently)
+        from main_project_app.email_service import send_application_received_email
+        send_application_received_email(application)
         return application
 
 
@@ -492,8 +537,15 @@ def _create_notification(
     message: str = "",
     application=None, vacancy=None, resume=None,
 ):
-    """Bildirishnoma yaratish uchun yordamchi funksiya."""
-    return Notification.objects.create(
+    """
+    Bildirishnoma yaratish uchun yordamchi funksiya.
+
+    Yaratilgandan keyin avtomatik tarzda:
+      1. DB ga saqlanadi (in-app uchun)
+      2. WebSocket orqali real-time yuboriladi (ulangan bo'lsa)
+      3. Yangi o'qilmaganlar soni yangilanadi
+    """
+    notification = Notification.objects.create(
         user=user,
         notification_type=notification_type,
         title=title,
@@ -502,6 +554,53 @@ def _create_notification(
         vacancy=vacancy,
         resume=resume,
     )
+    _broadcast_notification_ws(notification)
+    return notification
+
+
+def _broadcast_notification_ws(notification) -> None:
+    """
+    Bildirishnomani WebSocket guruhi orqali yuborish.
+    Channel layer mavjud bo'lmasa yoki xato bo'lsa — sukut bilan o'tadi
+    (in-app bildirishnoma DB'da saqlangan, foydalanuvchi keyin ko'radi).
+    """
+    try:
+        from asgiref.sync import async_to_sync
+        from channels.layers import get_channel_layer
+        from main_project_app.consumers import user_group_name
+
+        channel_layer = get_channel_layer()
+        if not channel_layer:
+            return
+
+        # Bildirishnoma ma'lumotini serializatsiya qilamiz
+        payload = NotificationSerializer(notification).data
+
+        # 1) Yangi bildirishnomani yuborish
+        async_to_sync(channel_layer.group_send)(
+            user_group_name(notification.user_id),
+            {
+                "type": "notification.message",  # → NotificationConsumer.notification_message
+                "data": payload,
+            },
+        )
+
+        # 2) O'qilmaganlar sonini yangilash (badge counter)
+        unread_count = Notification.objects.filter(
+            user_id=notification.user_id, is_read=False,
+        ).count()
+        async_to_sync(channel_layer.group_send)(
+            user_group_name(notification.user_id),
+            {
+                "type": "unread.count.update",  # → NotificationConsumer.unread_count_update
+                "count": unread_count,
+            },
+        )
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).warning(
+            "WS broadcast xatoligi: %s (bildirishnoma DB'da saqlangan)", e,
+        )
 
 
 def _send_otp_email(email: str, code: str) -> None:
@@ -675,18 +774,35 @@ class RegisterEmployerSerializer(_BaseRegisterSerializer):
 # ──────────────────────────────────────────────
 
 class LoginSerializer(serializers.Serializer):
-    phone_number = serializers.RegexField(regex=r"^\+?998\d{9}$")
+    """Email yoki telefon raqami bilan login (ikkisi ham ishlaydi)."""
+    email = serializers.EmailField(required=False, allow_blank=True)
+    phone_number = serializers.CharField(required=False, allow_blank=True)
     password = serializers.CharField(write_only=True)
 
     def validate(self, attrs):
-        phone = attrs["phone_number"]
-        if not phone.startswith("+"):
-            phone = "+" + phone
+        email = (attrs.get("email") or "").strip().lower()
+        phone = (attrs.get("phone_number") or "").strip()
 
-        try:
-            user = User.objects.get(phone_number=phone)
-        except User.DoesNotExist:
-            raise serializers.ValidationError({"phone_number": "Foydalanuvchi topilmadi"})
+        if not email and not phone:
+            raise serializers.ValidationError(
+                {"email": "Email yoki telefon raqami kiritilishi shart"}
+            )
+
+        user = None
+        if email:
+            user = User.objects.filter(email__iexact=email).first()
+            if not user:
+                raise serializers.ValidationError(
+                    {"email": "Bu email bilan foydalanuvchi topilmadi"}
+                )
+        else:
+            if not phone.startswith("+"):
+                phone = "+" + phone
+            user = User.objects.filter(phone_number=phone).first()
+            if not user:
+                raise serializers.ValidationError(
+                    {"phone_number": "Bu telefon raqami bilan foydalanuvchi topilmadi"}
+                )
 
         if not user.check_password(attrs["password"]):
             raise serializers.ValidationError({"password": "Parol noto'g'ri"})
@@ -705,6 +821,7 @@ class LoginSerializer(serializers.Serializer):
             "refresh": str(refresh),
             "role": user.role,
             "phone_number": user.phone_number,
+            "email": user.email,
         }
 
 
@@ -714,20 +831,56 @@ class LoginSerializer(serializers.Serializer):
 
 class UserProfileSerializer(serializers.ModelSerializer):
     organization_name = serializers.CharField(source="organization.name", read_only=True)
+    organization_logo = serializers.SerializerMethodField()
     has_resume = serializers.SerializerMethodField()
     role_display = serializers.CharField(source="get_role_display", read_only=True)
+    avatar = serializers.ImageField(required=False, allow_null=True)
 
     class Meta:
         model = User
         fields = [
             "id", "phone_number", "email", "role", "role_display",
-            "organization", "organization_name",
+            "avatar",
+            "organization", "organization_name", "organization_logo",
             "has_resume", "created_at",
         ]
-        read_only_fields = ["phone_number", "email", "role", "created_at"]
+        read_only_fields = ["phone_number", "email", "role", "created_at",
+                             "organization", "organization_name", "organization_logo"]
 
     def get_has_resume(self, obj):
         return hasattr(obj, "resume")
+
+    def get_organization_logo(self, obj):
+        request = self.context.get("request")
+        if obj.organization and obj.organization.logo:
+            try:
+                url = obj.organization.logo.url
+            except Exception:
+                return None
+            return request.build_absolute_uri(url) if request else url
+        return None
+
+
+# ──────────────────────────────────────────────
+# EMPLOYER — TASHKILOT TAHRIRLASH
+# ──────────────────────────────────────────────
+
+class EmployerOrganizationSerializer(serializers.ModelSerializer):
+    """Employer o'z tashkilot ma'lumotlarini tahrirlashi (logo bilan)."""
+    region_name = serializers.CharField(source="region.name", read_only=True)
+    district_name = serializers.CharField(source="district.name", read_only=True)
+    logo = serializers.ImageField(required=False, allow_null=True)
+
+    class Meta:
+        model = Organization
+        fields = [
+            "id", "name", "inn",
+            "logo", "website", "description",
+            "region", "region_name", "district", "district_name",
+            "created_at",
+        ]
+        read_only_fields = ["id", "inn", "created_at", "region_name", "district_name"]
+        # name'ni o'zgartirib bo'ladi, lekin INN — yo'q (rasmiy raqam)
 class VacancyLanguageWriteSerializer(serializers.ModelSerializer):
     class Meta:
         model = VacancyLanguageRequirement
@@ -927,7 +1080,7 @@ class InvitationCreateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         invitation = Application.objects.create(**validated_data)
-        # Job seeker'ga bildirishnoma (rezyume egasi)
+        # Job seeker'ga in-app bildirishnoma (rezyume egasi)
         vacancy = invitation.vacancy
         org_name = vacancy.organization.name if vacancy.organization else "Tashkilot"
         profession = vacancy.profession.name if vacancy.profession else "vakansiya"
@@ -940,6 +1093,9 @@ class InvitationCreateSerializer(serializers.ModelSerializer):
             vacancy=vacancy,
             resume=invitation.resume,
         )
+        # Email orqali xabar (fail-silently)
+        from main_project_app.email_service import send_invitation_received_email
+        send_invitation_received_email(invitation)
         return invitation
 
 
@@ -1018,7 +1174,7 @@ class ApplicationStatusUpdateSerializer(serializers.ModelSerializer):
         new_status = validated_data.get("status", old_status)
         instance = super().update(instance, validated_data)
 
-        # Status haqiqatan o'zgargan bo'lsa va job_seeker yo'naltirilgan bo'lsa
+        # Status haqiqatan o'zgargan bo'lsa, ham notification ham email yuborish
         if old_status != new_status:
             vacancy = instance.vacancy
             org_name = vacancy.organization.name if vacancy.organization else "Tashkilot"
@@ -1035,6 +1191,9 @@ class ApplicationStatusUpdateSerializer(serializers.ModelSerializer):
                 vacancy=vacancy,
                 resume=instance.resume,
             )
+            # Email orqali xabar (fail-silently)
+            from main_project_app.email_service import send_application_status_changed_email
+            send_application_status_changed_email(instance)
         return instance
 
 
@@ -1190,4 +1349,71 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
 
         otp.is_used = True
         otp.save(update_fields=["is_used"])
+        return user
+
+
+# ──────────────────────────────────────────────
+# PAROLNI O'ZGARTIRISH (logged-in foydalanuvchi)
+# ──────────────────────────────────────────────
+
+def _send_password_changed_email(user: "User") -> None:
+    """Foydalanuvchiga parol o'zgartirilgani haqida xabar berish.
+
+    Bu xavfsizlik amaliyoti: agar parolni begona kishi o'zgartirgan bo'lsa,
+    asl egasi darhol email orqali bilib oladi.
+    """
+    subject = "Parolingiz o'zgartirildi"
+    message = (
+        f"Salom!\n\n"
+        f"Sizning {settings.SPECTACULAR_SETTINGS['TITLE']} hisobingizdagi parol "
+        f"yangidan o'rnatildi.\n\n"
+        f"Agar bu sizning ishingiz bo'lmasa, iltimos darhol qo'llab-quvvatlash "
+        f"xizmatiga murojaat qiling va hisobingizni bloklatib qo'ying.\n\n"
+        f"Vaqt: {timezone.now().strftime('%d.%m.%Y %H:%M')}\n"
+    )
+    try:
+        send_mail(
+            subject=subject,
+            message=message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[user.email],
+            fail_silently=True,  # xavfsizlik xabari yuborolmaslik amalni to'xtatmasligi kerak
+        )
+    except Exception:
+        # Email yuborilmasa ham parol o'zgartirish bekor qilinmaydi
+        pass
+
+
+class PasswordChangeSerializer(serializers.Serializer):
+    """
+    Tizimga kirgan foydalanuvchi o'z parolini o'zgartiradi.
+    Eski parolni bilishi shart — xavfsizlik talabidir.
+    """
+    old_password = serializers.CharField(write_only=True, min_length=1)
+    new_password = serializers.CharField(write_only=True, min_length=6)
+    new_password_confirm = serializers.CharField(write_only=True, min_length=6)
+
+    def validate_old_password(self, value):
+        user = self.context["request"].user
+        if not user.check_password(value):
+            raise serializers.ValidationError("Eski parol noto'g'ri")
+        return value
+
+    def validate(self, attrs):
+        if attrs["new_password"] != attrs["new_password_confirm"]:
+            raise serializers.ValidationError(
+                {"new_password_confirm": "Yangi parollar mos kelmadi"}
+            )
+        if attrs["old_password"] == attrs["new_password"]:
+            raise serializers.ValidationError(
+                {"new_password": "Yangi parol eskisidan farq qilishi kerak"}
+            )
+        return attrs
+
+    def save(self, **kwargs):
+        user = self.context["request"].user
+        user.set_password(self.validated_data["new_password"])
+        user.save(update_fields=["password"])
+        # Xavfsizlik bildirishnomasini emailga yuborish
+        _send_password_changed_email(user)
         return user

@@ -3,6 +3,8 @@ Admin (platform administrator) uchun REST API endpoint'lari.
 Barcha endpoint'lar IsAuthenticated + IsAdmin permission talab qiladi.
 """
 from datetime import timedelta
+from django.conf import settings
+from django.core.cache import cache
 from django.db import models as db_models
 from django.db.models.functions import TruncDate
 from django.utils import timezone
@@ -426,11 +428,18 @@ class AdminUniversityDirectionDetailView(_BaseReferenceCRUD, generics.RetrieveUp
 class AdminStatsOverviewView(APIView):
     """
     GET /api/admin/stats/overview/
-    Platforma umumiy statistikasi
+    Platforma umumiy statistikasi (10 daqiqaga keshlanadi)
     """
     permission_classes = [IsAuthenticated, IsAdmin]
+    CACHE_KEY = "admin_stats_overview"
 
     def get(self, request):
+        # Avval keshdan tekshiramiz — admin har 10 daqiqada faqat 1 marta DB'ga so'rov yuboradi
+        cached = cache.get(self.CACHE_KEY)
+        if cached is not None:
+            cached["_cached"] = True
+            return Response(cached)
+
         now = timezone.now()
         last_7_days = now - timedelta(days=7)
         last_30_days = now - timedelta(days=30)
@@ -438,7 +447,7 @@ class AdminStatsOverviewView(APIView):
         S = Application.Status
 
         users_qs = User.objects.all()
-        return Response({
+        data = {
             "users": {
                 "total": users_qs.count(),
                 "active": users_qs.filter(is_active=True).count(),
@@ -482,7 +491,11 @@ class AdminStatsOverviewView(APIView):
                 "pending": Report.objects.filter(status=Report.Status.PENDING).count(),
                 "resolved": Report.objects.filter(status=Report.Status.RESOLVED).count(),
             },
-        })
+            "_cached": False,
+        }
+        ttl = getattr(settings, "CACHE_TTL_ADMIN_STATS", 600)
+        cache.set(self.CACHE_KEY, data, timeout=ttl)
+        return Response(data)
 
 
 class AdminStatsTimelineView(APIView):

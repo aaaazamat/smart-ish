@@ -1,30 +1,108 @@
-services:
-  - type: web
-    name: oson-ish-backend
-    runtime: python
+# ─────────────────────────────────────────────────────────────────────────────
+# Render.com Infrastructure as Code (Blueprint)
+# ─────────────────────────────────────────────────────────────────────────────
+# Render dashboard'da "New > Blueprint" → GitHub repo'ni tanlasangiz, bu fayl
+# o'qiladi va barcha servislar avtomatik yaratiladi:
+#
+#   • Web service — Django + Daphne (ASGI, WebSocket qo'llab-quvvatlash bilan)
+#   • PostgreSQL — bepul tier (90 kun)
+#
+# Maxfiy ma'lumotlar (`sync: false`) Render dashboard'da qo'lda kiritiladi.
+#
+# Hujjat: https://render.com/docs/blueprint-spec
+# ─────────────────────────────────────────────────────────────────────────────
+
+databases:
+  # PostgreSQL — bepul tier (1 GB, 90 kun keyin yangilash kerak)
+  - name: osonish-db
+    region: frankfurt        # Frankfurt — O'zbekistonga eng yaqin region
     plan: free
+    databaseName: osonish
+    user: osonish
+
+services:
+  # ─────────────────────────────────────
+  # Backend — Django + Daphne (ASGI)
+  # ─────────────────────────────────────
+  - type: web
+    name: osonish-backend
+    runtime: python
+    region: frankfurt
+    plan: free                # 750 soat/oy bepul (15 daqiqalik bekorga turishidan keyin uxlaydi)
+    branch: main
     buildCommand: "./build.sh"
-    startCommand: "cd config && gunicorn config.wsgi:application"
+    # Daphne ASGI server — WebSocket'ni qo'llab-quvvatlaydi (Gunicorn faqat HTTP)
+    startCommand: "cd config && daphne -b 0.0.0.0 -p $PORT config.asgi:application"
+
     envVars:
+      # ── Django asosi ──
       - key: PYTHON_VERSION
-        value: 3.12.0
+        value: "3.12.0"
       - key: SECRET_KEY
-        generateValue: true
+        generateValue: true   # Render avtomatik 50+ belgili tasodifiy kalit yaratadi
       - key: DEBUG
         value: "False"
       - key: ALLOWED_HOSTS
         value: ".onrender.com"
+
+      # ── Ma'lumotlar bazasi (DATABASE_URL avtomatik bog'lanadi) ──
+      - key: DATABASE_URL
+        fromDatabase:
+          name: osonish-db
+          property: connectionString
+
+      # ── CORS (Vercel frontend uchun) ──
       - key: CORS_ALLOW_ALL_ORIGINS
         value: "False"
       - key: CORS_ALLOWED_ORIGINS
-        sync: false  # Vercel domainini qo'lda kiritasiz
-      - key: GEMINI_API_KEY
-        sync: false  # Qo'lda kiritasiz
-      - key: DATABASE_URL
-        fromDatabase:
-          name: oson-ish-db
-          property: connectionString
+        sync: false           # Vercel deploy paytida qo'shiladi
 
-databases:
-  - name: oson-ish-db
-    plan: free
+      # ── JWT muddati ──
+      - key: JWT_ACCESS_LIFETIME_HOURS
+        value: "2"
+      - key: JWT_REFRESH_LIFETIME_DAYS
+        value: "30"
+
+      # ── OTP ──
+      - key: OTP_CODE_LIFETIME_MINUTES
+        value: "5"
+      - key: OTP_RESEND_COOLDOWN_SECONDS
+        value: "60"
+
+      # ── Email (Brevo SMTP) ──
+      - key: EMAIL_BACKEND
+        value: "django.core.mail.backends.smtp.EmailBackend"
+      - key: EMAIL_HOST
+        value: "smtp-relay.brevo.com"
+      - key: EMAIL_PORT
+        value: "587"
+      - key: EMAIL_USE_TLS
+        value: "True"
+      - key: EMAIL_HOST_USER
+        sync: false
+      - key: EMAIL_HOST_PASSWORD
+        sync: false
+      - key: DEFAULT_FROM_EMAIL
+        sync: false
+
+      # ── Frontend URL (email havolalar uchun) ──
+      - key: FRONTEND_URL
+        sync: false           # Vercel URL'i
+
+      # ── AI (Google Gemini) ──
+      - key: GEMINI_API_KEY
+        sync: false
+
+      # ── Cloudflare R2 (avatar, logo, certificate fayllari) ──
+      - key: USE_R2
+        value: "True"
+      - key: R2_ACCESS_KEY_ID
+        sync: false
+      - key: R2_SECRET_ACCESS_KEY
+        sync: false
+      - key: R2_BUCKET_NAME
+        sync: false
+      - key: R2_ENDPOINT_URL
+        sync: false
+      - key: R2_PUBLIC_URL
+        sync: false

@@ -4,14 +4,33 @@ AI servislar — Google Gemini API bilan integratsiya.
 GEMINI_API_KEY .env faylida sozlanishi kerak.
 Bepul kalit: https://aistudio.google.com/apikey
 """
+import hashlib
 import json
 import logging
 import urllib.request
 import urllib.error
 
 from django.conf import settings
+from django.core.cache import cache
 
 logger = logging.getLogger(__name__)
+
+
+# ─── Cache yordamchilari ──────────────────────
+
+def _match_cache_key(resume, vacancy) -> str:
+    """Rezyume va vakansiyaning oxirgi yangilanish sanasi asosida kalit yaratish."""
+    parts = [
+        "ai_match",
+        f"r{resume.id}",
+        f"ru{int(resume.updated_at.timestamp())}",
+        f"v{vacancy.id}",
+        f"vu{int(vacancy.updated_at.timestamp())}",
+    ]
+    raw = "|".join(parts)
+    # Qisqa va xavfsiz kalit
+    digest = hashlib.sha1(raw.encode("utf-8")).hexdigest()[:16]
+    return f"ai_match:{digest}"
 
 GEMINI_URL = (
     "https://generativelanguage.googleapis.com/v1beta/"
@@ -118,9 +137,9 @@ Qoidalar:
 
 # ─── Chatbot ──────────────────────────────────
 
-CHAT_SYSTEM_PROMPT = """Sen "OSON ISH" platformasi uchun do'stona AI yordamchisan.
+CHAT_SYSTEM_PROMPT = """Sen "SmartIsh" platformasi uchun do'stona AI yordamchisan.
 
-OSON ISH — O'zbekistonda ish izlash va ish beruvchilarni nomzodlar bilan bog'laydigan veb-platforma.
+SmartIsh — O'zbekistonda ish izlash va ish beruvchilarni nomzodlar bilan bog'laydigan veb-platforma.
 
 Sayt funksiyalari:
 - Vakansiyalarni qidirish va saqlash (Job Seeker)
@@ -189,13 +208,24 @@ def chat(messages: list, user_role: str = "guest") -> str:
 
 # ─── Smart Matching ───────────────────────────
 
-def calculate_match(resume, vacancy) -> dict:
+def calculate_match(resume, vacancy, use_cache: bool = True) -> dict:
     """
     Rezyume va vakansiya orasidagi mos kelish darajasini AI orqali baholash.
 
     resume, vacancy — ORM obyektlari.
-    Returns: {score: int, matched: [str], missing: [str], summary: str}
+    use_cache — natijani keshdan o'qish/yozish (default: True).
+    Returns: {score: int, matched: [str], missing: [str], summary: str, _cached: bool}
     """
+    # Keshdan tekshirish — agar rezyume yoki vakansiya yangilanmagan bo'lsa,
+    # avval hisoblangan natijani qaytaramiz
+    if use_cache:
+        key = _match_cache_key(resume, vacancy)
+        cached = cache.get(key)
+        if cached is not None:
+            logger.debug("AI match cache HIT: %s", key)
+            cached["_cached"] = True
+            return cached
+
     resume_skills = list(resume.skills.values_list("name", flat=True))
     resume_experiences = []
     for we in resume.work_experiences.all()[:5]:
@@ -283,9 +313,21 @@ Baholash mezonlari:
                 logger.error("Match parse error, raw=%s", raw[:500])
                 raise AIServiceError("AI javobini tushunib bo'lmadi")
 
-    return {
+    payload = {
         "score": int(result.get("score", 0)),
         "matched": result.get("matched", []) or [],
         "missing": result.get("missing", []) or [],
         "summary": result.get("summary", ""),
+        "_cached": False,
     }
+
+    # Natijani keshga yozish (1 soat)
+    if use_cache:
+        try:
+            ttl = getattr(settings, "CACHE_TTL_AI_MATCH", 3600)
+            cache.set(_match_cache_key(resume, vacancy), payload, timeout=ttl)
+            logger.debug("AI match cache SET: score=%s", payload["score"])
+        except Exception as e:
+            logger.warning("Cache set failed: %s", e)
+
+    return payload

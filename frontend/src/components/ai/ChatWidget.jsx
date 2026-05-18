@@ -169,7 +169,7 @@ function ChatWidget() {
               </div>
               <div>
                 <div className="font-semibold text-sm">AI Yordamchi</div>
-                <div className="text-xs text-white/80">OSON ISH bo'yicha</div>
+                <div className="text-xs text-white/80">SmartIsh bo'yicha</div>
               </div>
             </div>
             <div className="flex items-center gap-1">

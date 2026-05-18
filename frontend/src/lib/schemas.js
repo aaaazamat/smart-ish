@@ -3,15 +3,30 @@ import { z } from 'zod'
 const phoneRegex = /^\+?998\d{9}$/
 
 export const loginSchema = z.object({
-  phone_number: z
-    .string()
-    .regex(phoneRegex, 'Telefon raqami +998XXXXXXXXX formatida bo\'lishi kerak'),
+  email: z.string().email('Email formati noto\'g\'ri'),
   password: z.string().min(6, 'Parol kamida 6 ta belgidan iborat bo\'lishi kerak'),
 })
 
 export const otpSendSchema = z.object({
   email: z.string().email('Email formati noto\'g\'ri'),
 })
+
+export const passwordChangeSchema = z
+  .object({
+    old_password: z.string().min(1, 'Eski parolni kiriting'),
+    new_password: z
+      .string()
+      .min(6, 'Yangi parol kamida 6 ta belgidan iborat bo\'lishi kerak'),
+    new_password_confirm: z.string().min(6, 'Tasdiqlash uchun parolni qaytadan kiriting'),
+  })
+  .refine((data) => data.new_password === data.new_password_confirm, {
+    path: ['new_password_confirm'],
+    message: 'Yangi parollar mos kelmadi',
+  })
+  .refine((data) => data.old_password !== data.new_password, {
+    path: ['new_password'],
+    message: 'Yangi parol eskisidan farq qilishi kerak',
+  })
 
 export const resumeSchema = z.object({
   first_name: z.string().min(1, 'Ism majburiy'),

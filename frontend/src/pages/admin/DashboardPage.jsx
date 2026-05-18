@@ -1,12 +1,13 @@
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import {
-  Loader2, AlertCircle, Users, Briefcase, FileText, Eye,
+  AlertCircle, Users, Briefcase, FileText, Eye,
   CheckCircle2, X, UserCheck, UserX, Shield, AlertTriangle,
 } from 'lucide-react'
 import { adminApi } from '@/api/endpoints'
 import { useAuthStore } from '@/store/authStore'
 import { formatNumber } from '@/lib/format'
+import { StatCardSkeleton } from '@/components/ui/Skeletons'
 
 function StatCard({ icon: Icon, label, value, color = 'brand', sub, to }) {
   const colors = {
@@ -57,10 +58,20 @@ function AdminDashboardPage() {
   })
 
   if (isLoading) {
+    // Admin dashboard skeleton — stat kartochkalar va bo'limlar joyini
+    // ko'rsatib turadi
     return (
-      <div className="max-w-[1400px] mx-auto px-6 py-16 flex items-center justify-center text-gray-500">
-        <Loader2 className="w-6 h-6 animate-spin mr-2" />
-        Yuklanmoqda...
+      <div className="max-w-[1400px] mx-auto px-6 py-8">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-6">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <StatCardSkeleton key={i} />
+          ))}
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <StatCardSkeleton key={i} />
+          ))}
+        </div>
       </div>
     )
   }

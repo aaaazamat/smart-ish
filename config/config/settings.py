@@ -27,6 +27,10 @@ ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="*", cast=Csv())
 # APPS
 # ──────────────────────────────────────────────
 INSTALLED_APPS = [
+    # daphne MUST be at the top — runserver'ni ASGI rejimida ishlatadi
+    # (WebSocket qo'llab-quvvatlash bilan)
+    "daphne",
+
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -35,6 +39,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
 
     # 3rd party
+    "channels",                    # WebSocket / ASGI
     "rest_framework",
     "rest_framework_simplejwt",
     "rest_framework_simplejwt.token_blacklist",
@@ -77,6 +82,32 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "config.wsgi.application"
 ASGI_APPLICATION = "config.asgi.application"
+
+# ──────────────────────────────────────────────
+# CHANNELS — WebSocket real-time bildirishnomalar
+# ──────────────────────────────────────────────
+# DEV: InMemoryChannelLayer (Redis o'rnatish kerak emas)
+# PROD: RedisChannelLayer — bir nechta worker o'rtasida xabarlarni
+#       sinxronlash uchun (REDIS_URL sozlangan bo'lsa avtomatik tanlanadi)
+_REDIS_URL = config("REDIS_URL", default="")
+if _REDIS_URL:
+    try:
+        import channels_redis  # noqa: F401
+        CHANNEL_LAYERS = {
+            "default": {
+                "BACKEND": "channels_redis.core.RedisChannelLayer",
+                "CONFIG": {"hosts": [_REDIS_URL]},
+            }
+        }
+    except ImportError:
+        # channels-redis o'rnatilmagan bo'lsa, InMemory fallback
+        CHANNEL_LAYERS = {
+            "default": {"BACKEND": "channels.layers.InMemoryChannelLayer"},
+        }
+else:
+    CHANNEL_LAYERS = {
+        "default": {"BACKEND": "channels.layers.InMemoryChannelLayer"},
+    }
 
 # ──────────────────────────────────────────────
 # DATABASE
@@ -128,12 +159,13 @@ REST_FRAMEWORK = {
         "rest_framework.throttling.ScopedRateThrottle",
     ],
     "DEFAULT_THROTTLE_RATES": {
-        "anon": "100/hour",          # noma'lum foydalanuvchi
-        "user": "1000/hour",         # tizimga kirgan foydalanuvchi
-        "otp": "5/hour",             # OTP yuborish (juda qattiq)
-        "login": "10/hour",          # login (qattiq)
-        "password_reset": "5/hour",  # parolni tiklash
-        "report": "10/hour",         # shikoyat yuborish
+        "anon": "100/hour",            # noma'lum foydalanuvchi
+        "user": "1000/hour",           # tizimga kirgan foydalanuvchi
+        "otp": "5/hour",               # OTP yuborish (juda qattiq)
+        "login": "10/hour",            # login (qattiq)
+        "password_reset": "5/hour",    # parolni tiklash
+        "password_change": "5/hour",   # logged-in parolni o'zgartirish
+        "report": "10/hour",           # shikoyat yuborish
     },
 }
 
@@ -212,12 +244,84 @@ USE_TZ = True
 # ──────────────────────────────────────────────
 # STATIC / MEDIA
 # ──────────────────────────────────────────────
-MEDIA_URL = "/media/"
-MEDIA_ROOT = BASE_DIR / "media"
-
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
+# Media fayllar (avatar, logo, sertifikat va h.k.)
+# DEV: lokal `media/` papkasi
+# PROD: Cloudflare R2 (S3-compatible)
+USE_R2 = config("USE_R2", default=False, cast=bool)
+
+if USE_R2:
+    # ── Cloudflare R2 sozlamalari ──
+    R2_ACCESS_KEY_ID = config("R2_ACCESS_KEY_ID")
+    R2_SECRET_ACCESS_KEY = config("R2_SECRET_ACCESS_KEY")
+    R2_BUCKET_NAME = config("R2_BUCKET_NAME")
+    R2_ENDPOINT_URL = config("R2_ENDPOINT_URL")
+    R2_PUBLIC_URL = config("R2_PUBLIC_URL")  # https://pub-xxx.r2.dev
+
+    # django-storages S3 backend (R2 — S3-compatible)
+    STORAGES = {
+        "default": {
+            "BACKEND": "storages.backends.s3.S3Storage",
+            "OPTIONS": {
+                "access_key": R2_ACCESS_KEY_ID,
+                "secret_key": R2_SECRET_ACCESS_KEY,
+                "bucket_name": R2_BUCKET_NAME,
+                "endpoint_url": R2_ENDPOINT_URL,
+                "region_name": "auto",   # R2 region — auto
+                "signature_version": "s3v4",
+                "default_acl": None,      # R2 ACL'larni qo'llab-quvvatlamaydi
+                "querystring_auth": False, # public URL'lar uchun
+                "custom_domain": R2_PUBLIC_URL.replace("https://", "").replace("http://", ""),
+                "file_overwrite": False,  # bir xil nomli fayl bo'lsa, yangi nom beradi
+            },
+        },
+        "staticfiles": {
+            "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"
+            if not DEBUG
+            else "django.contrib.staticfiles.storage.StaticFilesStorage",
+        },
+    }
+    MEDIA_URL = f"{R2_PUBLIC_URL.rstrip('/')}/"
+    # MEDIA_ROOT R2 rejimida ishlatilmaydi, lekin Django talab qiladi
+    MEDIA_ROOT = BASE_DIR / "media"
+else:
+    # ── Lokal fayl tizimi (DEV) ──
+    MEDIA_URL = "/media/"
+    MEDIA_ROOT = BASE_DIR / "media"
+
+# WhiteNoise — production'da static fayllarni siqilgan + manifest bilan servirovat
+# qiladi (br/gzip avtomatik, cache header'lar bilan)
+if not DEBUG:
+    STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
+# ──────────────────────────────────────────────
+# PRODUCTION SECURITY HEADERS
+# ──────────────────────────────────────────────
+# Faqat production (DEBUG=False) muhitda yoqiladi.
+# Render avtomatik HTTPS taqdim etadi — shuning uchun HTTPS-only sozlamalar mos.
+if not DEBUG:
+    # HTTPS redirect — har qanday HTTP so'rov HTTPS'ga yo'naltiriladi
+    SECURE_SSL_REDIRECT = True
+    # Render proxy'idan kelgan HTTPS sarlavhasini hisobga olish
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+    # HSTS — brauzer ushbu domenni faqat HTTPS orqali ochsin
+    SECURE_HSTS_SECONDS = 31536000          # 1 yil
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+
+    # Cookie xavfsizligi — faqat HTTPS orqali yuborilsin
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SESSION_COOKIE_HTTPONLY = True
+    CSRF_COOKIE_HTTPONLY = True
+
+    # Boshqa xavfsizlik
+    SECURE_CONTENT_TYPE_NOSNIFF = True       # MIME-type sniffing himoyasi
+    SECURE_REFERRER_POLICY = "same-origin"   # Referrer header'ni cheklash
+    X_FRAME_OPTIONS = "DENY"                  # iframe ichida ochishni taqiqlash
 
 # ──────────────────────────────────────────────
 # EMAIL — OTP yetkazib berish
@@ -233,11 +337,50 @@ EMAIL_HOST_USER = config("EMAIL_HOST_USER", default="")
 EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD", default="")
 DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default="noreply@diplom.local")
 
+# Frontend bosh URL — email'lardagi havolalar uchun (CTA tugmalar)
+FRONTEND_URL = config("FRONTEND_URL", default="http://localhost:5173")
+
 # ──────────────────────────────────────────────
 # OTP
 # ──────────────────────────────────────────────
 OTP_CODE_LIFETIME_MINUTES = config("OTP_CODE_LIFETIME_MINUTES", default=5, cast=int)
 OTP_RESEND_COOLDOWN_SECONDS = config("OTP_RESEND_COOLDOWN_SECONDS", default=60, cast=int)
+
+# ──────────────────────────────────────────────
+# CACHE — LocMem (default) yoki Redis
+# ──────────────────────────────────────────────
+# DEV: .env'da REDIS_URL bo'sh — LocMem ishlatiladi (qo'shimcha o'rnatishsiz)
+# PROD: REDIS_URL=redis://localhost:6379/1 — Redis ishlatiladi (tezroq, masshtablashga mos)
+REDIS_URL = config("REDIS_URL", default="")
+
+if REDIS_URL:
+    CACHES = {
+        "default": {
+            "BACKEND": "django_redis.cache.RedisCache",
+            "LOCATION": REDIS_URL,
+            "OPTIONS": {
+                "CLIENT_CLASS": "django_redis.client.DefaultClient",
+                "IGNORE_EXCEPTIONS": True,  # Redis tushib qolsa, app crash bo'lmaydi
+            },
+            "KEY_PREFIX": "osonish",
+            "TIMEOUT": 300,  # 5 daqiqa default
+        }
+    }
+else:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+            "LOCATION": "osonish-default",
+            "TIMEOUT": 300,
+            "OPTIONS": {"MAX_ENTRIES": 5000},
+        }
+    }
+
+# Cache TTL (sekundlarda) — kerak bo'lganda joyida override qilish mumkin
+CACHE_TTL_REFERENCE_DATA = 86400  # ma'lumotnoma — 1 sutka (kasblar, viloyatlar)
+CACHE_TTL_AI_MATCH = 3600         # AI moslik natijasi — 1 soat
+CACHE_TTL_ADMIN_STATS = 600       # admin statistika — 10 daqiqa
+CACHE_TTL_VACANCY_DETAIL = 180    # vakansiya detali — 3 daqiqa
 
 # ──────────────────────────────────────────────
 # AI (Google Gemini)

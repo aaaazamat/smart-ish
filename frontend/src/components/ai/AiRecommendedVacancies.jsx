@@ -1,13 +1,14 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
-  Sparkles, Loader2, AlertCircle, ChevronDown, ChevronUp,
+  Sparkles, AlertCircle, ChevronDown, ChevronUp,
   Briefcase, MapPin, Building2,
 } from 'lucide-react'
 import { useAiTopVacanciesForMe } from '@/hooks/useAi'
 import { getApiError } from '@/lib/apiError'
 import { formatSalary } from '@/lib/format'
 import { cn } from '@/lib/cn'
+import { SkeletonList, AiMatchCardSkeleton } from '@/components/ui/Skeletons'
 
 function ScoreBadge({ score }) {
   let color = 'bg-gray-100 text-gray-700'
@@ -113,9 +114,12 @@ function AiRecommendedVacancies() {
       {open && (
         <div className="mt-4">
           {fetch.isPending && (
-            <div className="flex items-center justify-center py-8 text-gray-500 text-sm">
-              <Loader2 className="w-5 h-5 animate-spin mr-2" />
-              AI vakansiyalarni tahlil qilayapti... (15-30 sekund)
+            <div>
+              <p className="text-sm text-gray-500 mb-3 flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-brand-500" />
+                AI vakansiyalarni tahlil qilayapti... (15-30 sekund)
+              </p>
+              <SkeletonList count={3} Component={AiMatchCardSkeleton} />
             </div>
           )}
 

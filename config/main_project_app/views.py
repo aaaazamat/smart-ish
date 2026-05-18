@@ -2,7 +2,14 @@ from django.db import models as db_models
 from django.db.models import F
 from django.utils import timezone
 
+from django.conf import settings
+from django.core.cache import cache
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
+from django.views.decorators.vary import vary_on_headers
+
 from rest_framework import generics, status, filters
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -31,6 +38,8 @@ from .serializers import (
     RegisterJobSeekerSerializer, RegisterEmployerSerializer,
     LoginSerializer, UserProfileSerializer,
     PasswordResetRequestSerializer, PasswordResetConfirmSerializer,
+    PasswordChangeSerializer,
+    EmployerOrganizationSerializer,
     # resume
     ResumeListSerializer, ResumeDetailSerializer, ResumeWriteSerializer,
     ResumeSimilarSerializer,
@@ -48,6 +57,8 @@ from .serializers import (
     ApplicationStatusUpdateSerializer,
     # notifications
     NotificationSerializer,
+    # resume views (rezyumemni kim ko'rdi)
+    MyResumeViewSerializer,
 )
 from .filters import VacancyFilter, ResumeFilter, OrganizationFilter
 from .permissions import (
@@ -67,9 +78,21 @@ class OTPSendView(APIView):
     throttle_scope = "otp"
 
     def post(self, request):
+        import logging
+        logger = logging.getLogger(__name__)
+
         serializer = OTPSendSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        serializer.save()
+
+        try:
+            serializer.save()
+        except Exception as e:
+            logger.error("OTP email yuborilmadi: %s", e)
+            return Response(
+                {"email": "Kod yuborilmadi. Iltimos email manzilini tekshiring yoki keyinroq urinib ko'ring."},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
+
         return Response(
             {"detail": "Tasdiqlash kodi emailingizga yuborildi"},
             status=status.HTTP_200_OK,
@@ -141,14 +164,27 @@ class LogoutView(APIView):
 
 
 class ProfileView(APIView):
-    """GET / PATCH /api/auth/me/"""
+    """
+    GET / PATCH /api/auth/me/
+
+    Avatar yuklash uchun multipart/form-data ham qabul qilinadi:
+        PATCH /api/auth/me/
+        Content-Type: multipart/form-data
+        avatar=<file>
+    """
     permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def get(self, request):
-        return Response(UserProfileSerializer(request.user).data)
+        return Response(
+            UserProfileSerializer(request.user, context={"request": request}).data
+        )
 
     def patch(self, request):
-        serializer = UserProfileSerializer(request.user, data=request.data, partial=True)
+        serializer = UserProfileSerializer(
+            request.user, data=request.data, partial=True,
+            context={"request": request},
+        )
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data)
@@ -189,10 +225,46 @@ class PasswordResetConfirmView(APIView):
         )
 
 
+class PasswordChangeView(APIView):
+    """
+    POST /api/auth/change-password/
+    Tizimga kirgan foydalanuvchi o'z parolini yangilaydi.
+    body: {"old_password": "...", "new_password": "...", "new_password_confirm": "..."}
+
+    Xavfsizlik:
+    - Eski parolni bilish shart
+    - Yangi parol eskisi bilan bir xil bo'lmasligi kerak
+    - Throttling: soatiga 5 marta (parolni qaytadan terish hujumini cheklash)
+    - Muvaffaqiyatli o'zgartirilganda foydalanuvchining emailiga xabar yuboriladi
+    """
+    permission_classes = [IsAuthenticated]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "password_change"
+
+    def post(self, request):
+        serializer = PasswordChangeSerializer(
+            data=request.data,
+            context={"request": request},
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(
+            {"detail": "Parol muvaffaqiyatli yangilandi"},
+            status=status.HTTP_200_OK,
+        )
+
+
 # ══════════════════════════════════════════════
 # REFERENCE
 # ══════════════════════════════════════════════
 
+# Ma'lumotnoma endpoint'lar uchun cache decorator — kasblar, viloyatlar kabi
+# ma'lumotlar kamdan-kam o'zgaradi, har so'rovda DB'ga bormaslik uchun keshlanadi.
+_REF_CACHE_TTL = settings.CACHE_TTL_REFERENCE_DATA  # 1 sutka
+
+
+@method_decorator(cache_page(_REF_CACHE_TTL), name="dispatch")
+@method_decorator(vary_on_headers("Accept-Language"), name="dispatch")
 class RegionListView(generics.ListAPIView):
     queryset = Region.objects.all()
     serializer_class = RegionSerializer
@@ -200,6 +272,7 @@ class RegionListView(generics.ListAPIView):
     pagination_class = None
 
 
+@method_decorator(cache_page(_REF_CACHE_TTL), name="dispatch")
 class DistrictListView(generics.ListAPIView):
     serializer_class = DistrictSerializer
     permission_classes = [AllowAny]
@@ -213,6 +286,7 @@ class DistrictListView(generics.ListAPIView):
         return qs
 
 
+@method_decorator(cache_page(_REF_CACHE_TTL), name="dispatch")
 class ProfessionListView(generics.ListAPIView):
     queryset = Profession.objects.all()
     serializer_class = ProfessionSerializer
@@ -222,6 +296,7 @@ class ProfessionListView(generics.ListAPIView):
     pagination_class = None
 
 
+@method_decorator(cache_page(_REF_CACHE_TTL), name="dispatch")
 class SkillListView(generics.ListAPIView):
     queryset = Skill.objects.all()
     serializer_class = SkillSerializer
@@ -231,6 +306,7 @@ class SkillListView(generics.ListAPIView):
     pagination_class = None
 
 
+@method_decorator(cache_page(_REF_CACHE_TTL), name="dispatch")
 class UniversityListView(generics.ListAPIView):
     queryset = University.objects.all()
     serializer_class = UniversitySerializer
@@ -240,6 +316,7 @@ class UniversityListView(generics.ListAPIView):
     pagination_class = None
 
 
+@method_decorator(cache_page(_REF_CACHE_TTL), name="dispatch")
 class UniversityDirectionListView(generics.ListAPIView):
     serializer_class = UniversityDirectionSerializer
     permission_classes = [AllowAny]
@@ -253,6 +330,7 @@ class UniversityDirectionListView(generics.ListAPIView):
         return qs
 
 
+@method_decorator(cache_page(_REF_CACHE_TTL), name="dispatch")
 class IndustryListView(generics.ListAPIView):
     queryset = Industry.objects.all()
     serializer_class = IndustrySerializer
@@ -493,6 +571,61 @@ class MyResumeView(APIView):
         return Response(ResumeDetailSerializer(resume).data)
 
 
+class MyResumeViewsView(APIView):
+    """
+    GET /api/resumes/my/views/
+
+    Job seeker o'z rezyumesini kim ko'rganini ko'radi.
+    Maxfiylik: viewer'ning shaxsiy ma'lumotlari (telefon, email) yashirilgan,
+    faqat tashkilot nomi va ko'rilgan vaqt ko'rsatiladi.
+
+    Javob tuzilmasi:
+      {
+        "total": 12,
+        "unique_organizations": 5,
+        "last_7_days": 3,
+        "views": [{ ... }, ...]   # oxirgi 50 ta ko'rish
+      }
+    """
+    permission_classes = [IsAuthenticated, IsJobSeeker]
+
+    def get(self, request):
+        if not hasattr(request.user, "resume"):
+            return Response({
+                "total": 0, "unique_organizations": 0, "last_7_days": 0,
+                "views": [],
+                "detail": "Avval rezyume yarating",
+            })
+
+        resume = request.user.resume
+        from datetime import timedelta
+        week_ago = timezone.now() - timedelta(days=7)
+
+        views_qs = (
+            ResumeView.objects
+            .filter(resume=resume)
+            .select_related("viewer", "viewer__organization")
+            .order_by("-viewed_at")
+        )
+
+        total = views_qs.count()
+        unique_orgs = (
+            views_qs.exclude(viewer__organization__isnull=True)
+            .values("viewer__organization").distinct().count()
+        )
+        last_7_days = views_qs.filter(viewed_at__gte=week_ago).count()
+        items = views_qs[:50]
+
+        return Response({
+            "total": total,
+            "unique_organizations": unique_orgs,
+            "last_7_days": last_7_days,
+            "views": MyResumeViewSerializer(
+                items, many=True, context={"request": request}
+            ).data,
+        })
+
+
 # ── ish tajribasi ───────────────────────────────
 
 class WorkExperienceListCreateView(generics.ListCreateAPIView):
@@ -674,167 +807,226 @@ class MyApplicationStatsView(APIView):
         })
 
 
+def _compute_top_vacancies_for_user(user_id: int) -> dict:
+    """Job seeker uchun top 5 vakansiyani AI bilan hisoblash (sof funksiya)."""
+    from main_project_app.ai_services import calculate_match, AIServiceError
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+
+    try:
+        user = User.objects.select_related("resume", "resume__profession", "resume__region").get(pk=user_id)
+    except User.DoesNotExist:
+        return {"detail": "Foydalanuvchi topilmadi", "matched": []}
+
+    if not hasattr(user, "resume"):
+        return {"detail": "Rezyume yaratilmagan", "matched": []}
+
+    resume = user.resume
+    vacancies_qs = (
+        Vacancy.objects.filter(is_active=True)
+        .select_related("profession", "industry", "organization", "region")
+    )
+    primary = list(
+        vacancies_qs.filter(
+            db_models.Q(profession=resume.profession) |
+            db_models.Q(region=resume.region)
+        ).distinct()[:8]
+    )
+    if len(primary) < 3:
+        extra_ids = [v.id for v in primary]
+        primary += list(vacancies_qs.exclude(id__in=extra_ids)[: (8 - len(primary))])
+
+    if not primary:
+        return {"matched": []}
+
+    def score_vacancy(vacancy):
+        try:
+            m = calculate_match(resume, vacancy)
+            return {
+                "vacancy_id": vacancy.id,
+                "profession_name": vacancy.profession.name if vacancy.profession else "Vakansiya",
+                "organization_name": vacancy.organization.name if vacancy.organization else None,
+                "region_name": vacancy.region.name if vacancy.region else None,
+                "salary_from": vacancy.salary_from,
+                "salary_to": vacancy.salary_to,
+                "score": m["score"],
+                "summary": m["summary"],
+                "matched": (m["matched"] or [])[:3],
+            }
+        except (AIServiceError, Exception):
+            return None
+
+    results = []
+    try:
+        with ThreadPoolExecutor(max_workers=4) as executor:
+            futures = [executor.submit(score_vacancy, v) for v in primary]
+            for f in as_completed(futures, timeout=90):
+                res = f.result()
+                if res:
+                    results.append(res)
+    except TimeoutError:
+        pass
+
+    results.sort(key=lambda x: x["score"], reverse=True)
+    return {"matched": results[:5]}
+
+
 class AiTopVacanciesForMeView(APIView):
     """
-    GET /api/ai/top-vacancies-for-me/
-    Job seeker rezyumesiga mos top 5 vakansiya (AI tahlili bilan)
+    GET /api/ai/top-vacancies-for-me/             — sinxron (15-30 sek)
+    GET /api/ai/top-vacancies-for-me/?async=true  — fon rejimida (darhol task_id qaytaradi)
+
+    Asinxron rejim:
+      1. So'rov yuboriladi → {"task_id": "abc123"}
+      2. Frontend /api/ai/tasks/abc123/ ga polling qiladi (har 2 sek)
+      3. Javob {"status": "done", "result": {...}}
     """
     permission_classes = [IsAuthenticated, IsJobSeeker]
 
     def get(self, request):
-        from main_project_app.ai_services import calculate_match, AIServiceError
-        from concurrent.futures import ThreadPoolExecutor, as_completed
+        is_async = request.query_params.get("async", "").lower() in ("true", "1", "yes")
 
-        user = request.user
-        if not hasattr(user, "resume"):
+        if is_async:
+            from main_project_app import ai_tasks
+            task_id = ai_tasks.submit(
+                _compute_top_vacancies_for_user,
+                request.user.id,
+                owner_id=request.user.id,
+            )
             return Response(
-                {"detail": "Avval rezyume yarating"},
-                status=status.HTTP_400_BAD_REQUEST,
+                {
+                    "task_id": task_id,
+                    "status": "pending",
+                    "poll_url": f"/api/ai/tasks/{task_id}/",
+                },
+                status=status.HTTP_202_ACCEPTED,
             )
 
-        resume = user.resume
+        # Sinxron rejim — eski xulq-atvor
+        result = _compute_top_vacancies_for_user(request.user.id)
+        if not result.get("matched") and "detail" in result:
+            return Response(result, status=status.HTTP_400_BAD_REQUEST)
+        return Response(result)
 
-        # Heuristic shortlist
-        vacancies_qs = (
-            Vacancy.objects.filter(is_active=True)
-            .select_related("profession", "industry", "organization", "region")
-        )
 
-        primary = list(
-            vacancies_qs.filter(
-                db_models.Q(profession=resume.profession) |
-                db_models.Q(region=resume.region)
-            ).distinct()[:8]
-        )
-        if len(primary) < 3:
-            extra_ids = [v.id for v in primary]
-            primary += list(
-                vacancies_qs.exclude(id__in=extra_ids)[: (8 - len(primary))]
-            )
+def _compute_top_resumes_for_vacancy(vacancy_id: int, employer_id: int) -> dict:
+    """Vakansiyaga eng mos top 5 nomzodni AI bilan hisoblash (sof funksiya)."""
+    from main_project_app.ai_services import calculate_match, AIServiceError
+    from concurrent.futures import ThreadPoolExecutor, as_completed
 
-        if not primary:
-            return Response({"matched": []})
+    try:
+        vacancy = Vacancy.objects.select_related(
+            "profession", "industry", "region"
+        ).get(pk=vacancy_id, employer_id=employer_id)
+    except Vacancy.DoesNotExist:
+        return {"detail": "Vakansiya topilmadi", "matched": []}
 
-        def score_vacancy(vacancy):
-            try:
-                m = calculate_match(resume, vacancy)
-                return {
-                    "vacancy_id": vacancy.id,
-                    "profession_name": vacancy.profession.name if vacancy.profession else "Vakansiya",
-                    "organization_name": vacancy.organization.name if vacancy.organization else None,
-                    "region_name": vacancy.region.name if vacancy.region else None,
-                    "salary_from": vacancy.salary_from,
-                    "salary_to": vacancy.salary_to,
-                    "score": m["score"],
-                    "summary": m["summary"],
-                    "matched": (m["matched"] or [])[:3],
-                }
-            except (AIServiceError, Exception):
-                return None
+    candidates_qs = (
+        Resume.objects.filter(is_published=True)
+        .select_related("profession", "region")
+        .prefetch_related("skills", "work_experiences")
+        .distinct()
+    )
+    primary = list(
+        candidates_qs.filter(
+            db_models.Q(profession=vacancy.profession) |
+            db_models.Q(region=vacancy.region)
+        )[:8]
+    )
+    if len(primary) < 3:
+        extra_ids = [r.id for r in primary]
+        primary += list(candidates_qs.exclude(id__in=extra_ids)[: (8 - len(primary))])
 
-        results = []
+    if not primary:
+        return {"matched": []}
+
+    def score_candidate(resume):
         try:
-            with ThreadPoolExecutor(max_workers=4) as executor:
-                futures = [executor.submit(score_vacancy, v) for v in primary]
-                for f in as_completed(futures, timeout=90):
-                    res = f.result()
-                    if res:
-                        results.append(res)
-        except TimeoutError:
-            pass
+            m = calculate_match(resume, vacancy)
+            full_name = " ".join(filter(None, [resume.last_name, resume.first_name]))
+            return {
+                "resume_id": resume.id,
+                "full_name": full_name or "Nomzod",
+                "profession_name": resume.profession.name if resume.profession else None,
+                "career_level_display": resume.get_career_level_display(),
+                "region_name": resume.region.name if resume.region else None,
+                "expected_salary": resume.expected_salary,
+                "score": m["score"],
+                "summary": m["summary"],
+                "matched": (m["matched"] or [])[:3],
+            }
+        except (AIServiceError, Exception):
+            return None
 
-        if not results:
-            return Response(
-                {"detail": "AI tahlil qilolmadi, biroz keyinroq urinib ko'ring"},
-                status=status.HTTP_503_SERVICE_UNAVAILABLE,
-            )
+    results = []
+    try:
+        with ThreadPoolExecutor(max_workers=4) as executor:
+            futures = [executor.submit(score_candidate, r) for r in primary]
+            for f in as_completed(futures, timeout=90):
+                res = f.result()
+                if res:
+                    results.append(res)
+    except TimeoutError:
+        pass
 
-        results.sort(key=lambda x: x["score"], reverse=True)
-        return Response({"matched": results[:5]})
+    results.sort(key=lambda x: x["score"], reverse=True)
+    return {"matched": results[:5]}
 
 
 class AiVacancyTopMatchedResumesView(APIView):
     """
-    GET /api/employer/vacancies/{vacancy_id}/ai-top-resumes/
-    AI yordamida top 5 mos nomzod (parallel Gemini chaqiriqlar)
+    GET /api/employer/vacancies/{vacancy_id}/ai-top-resumes/             — sinxron
+    GET /api/employer/vacancies/{vacancy_id}/ai-top-resumes/?async=true  — fon rejimida
     """
     permission_classes = [IsAuthenticated, IsEmployer]
 
     def get(self, request, vacancy_id):
-        from main_project_app.ai_services import calculate_match, AIServiceError
-        from concurrent.futures import ThreadPoolExecutor, as_completed
+        is_async = request.query_params.get("async", "").lower() in ("true", "1", "yes")
 
-        try:
-            vacancy = Vacancy.objects.select_related(
-                "profession", "industry", "region"
-            ).get(pk=vacancy_id, employer=request.user)
-        except Vacancy.DoesNotExist:
+        if is_async:
+            from main_project_app import ai_tasks
+            task_id = ai_tasks.submit(
+                _compute_top_resumes_for_vacancy,
+                vacancy_id,
+                request.user.id,
+                owner_id=request.user.id,
+            )
             return Response(
-                {"detail": "Vakansiya topilmadi"},
+                {
+                    "task_id": task_id,
+                    "status": "pending",
+                    "poll_url": f"/api/ai/tasks/{task_id}/",
+                },
+                status=status.HTTP_202_ACCEPTED,
+            )
+
+        result = _compute_top_resumes_for_vacancy(vacancy_id, request.user.id)
+        if "detail" in result:
+            return Response(result, status=status.HTTP_404_NOT_FOUND)
+        return Response(result)
+
+
+class AiTaskStatusView(APIView):
+    """
+    GET /api/ai/tasks/{task_id}/
+    Asinxron AI task'ining holatini qaytaradi.
+
+    Javoblar:
+      {"status": "pending"}                     — hali ishlamoqda
+      {"status": "done", "result": {...}}       — yakunlandi, natija bor
+      {"status": "error", "error": "..."}       — xato yuz berdi
+      404                                        — task topilmadi yoki muddati o'tdi
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, task_id):
+        from main_project_app import ai_tasks
+        task = ai_tasks.get(task_id, owner_id=request.user.id)
+        if task is None:
+            return Response(
+                {"detail": "Vazifa topilmadi yoki muddati o'tgan"},
                 status=status.HTTP_404_NOT_FOUND,
             )
-
-        # Heuristic shortlist (AI uchun limit qilish maqsadida)
-        candidates_qs = (
-            Resume.objects.filter(is_published=True)
-            .select_related("profession", "region")
-            .prefetch_related("skills", "work_experiences")
-            .distinct()
-        )
-        # Avval mos kasb yoki hudud bo'yicha
-        primary = list(
-            candidates_qs.filter(
-                db_models.Q(profession=vacancy.profession) |
-                db_models.Q(region=vacancy.region)
-            )[:8]
-        )
-        if len(primary) < 3:
-            # Fallback: barcha published rezyume
-            extra_ids = [r.id for r in primary]
-            primary += list(
-                candidates_qs.exclude(id__in=extra_ids)[: (8 - len(primary))]
-            )
-
-        if not primary:
-            return Response({"matched": []})
-
-        def score_candidate(resume):
-            try:
-                m = calculate_match(resume, vacancy)
-                full_name = " ".join(filter(None, [resume.last_name, resume.first_name]))
-                return {
-                    "resume_id": resume.id,
-                    "full_name": full_name or "Nomzod",
-                    "profession_name": resume.profession.name if resume.profession else None,
-                    "career_level_display": resume.get_career_level_display(),
-                    "region_name": resume.region.name if resume.region else None,
-                    "expected_salary": resume.expected_salary,
-                    "score": m["score"],
-                    "summary": m["summary"],
-                    "matched": (m["matched"] or [])[:3],
-                }
-            except (AIServiceError, Exception):
-                return None
-
-        results = []
-        try:
-            with ThreadPoolExecutor(max_workers=4) as executor:
-                futures = [executor.submit(score_candidate, r) for r in primary]
-                for f in as_completed(futures, timeout=90):
-                    res = f.result()
-                    if res:
-                        results.append(res)
-        except TimeoutError:
-            pass
-
-        if not results:
-            return Response(
-                {"detail": "AI tahlil qilolmadi, biroz keyinroq urinib ko'ring"},
-                status=status.HTTP_503_SERVICE_UNAVAILABLE,
-            )
-
-        results.sort(key=lambda x: x["score"], reverse=True)
-        return Response({"matched": results[:5]})
+        return Response(task)
 
 
 class AiMatchView(APIView):
@@ -1000,6 +1192,50 @@ class GenerateVacancyDescriptionView(APIView):
                 {"detail": str(e)},
                 status=status.HTTP_503_SERVICE_UNAVAILABLE,
             )
+
+
+class EmployerOrganizationView(APIView):
+    """
+    GET   /api/employer/organization/
+    PATCH /api/employer/organization/
+
+    Employer o'z tashkilot ma'lumotlarini ko'radi va tahrirlaydi
+    (logo, website, description, region, district, name).
+
+    Multipart/form-data ishlatish — logo yuklash uchun:
+        PATCH /api/employer/organization/
+        Content-Type: multipart/form-data
+        logo=<file>
+        description=<text>
+    """
+    permission_classes = [IsAuthenticated, IsEmployer]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
+
+    def get(self, request):
+        org = request.user.organization
+        if not org:
+            return Response(
+                {"detail": "Tashkilot biriktirilmagan"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        return Response(
+            EmployerOrganizationSerializer(org, context={"request": request}).data
+        )
+
+    def patch(self, request):
+        org = request.user.organization
+        if not org:
+            return Response(
+                {"detail": "Tashkilot biriktirilmagan"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        serializer = EmployerOrganizationSerializer(
+            org, data=request.data, partial=True,
+            context={"request": request},
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
 
 
 class EmployerVacancyListCreateView(generics.ListCreateAPIView):

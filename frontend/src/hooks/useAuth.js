@@ -87,3 +87,42 @@ export function useLogout() {
     },
   })
 }
+
+/**
+ * Logged-in foydalanuvchi o'z parolini o'zgartiradi.
+ * Backend muvaffaqiyatli javob qaytarsa, foydalanuvchi shu sessiyada qoladi.
+ * Yangi parol bilan keyingi login'larda foydalaniladi.
+ */
+export function useChangePassword() {
+  return useMutation({
+    mutationFn: authApi.changePassword,
+  })
+}
+
+/**
+ * Avatarni yuklash (rasm fayli) — muvaffaqiyatdan keyin /me qaytadan o'qiladi.
+ */
+export function useUploadAvatar() {
+  const queryClient = useQueryClient()
+  const setUser = useAuthStore((s) => s.setUser)
+  return useMutation({
+    mutationFn: (file) => authApi.uploadAvatar(file),
+    onSuccess: (data) => {
+      setUser(data)
+      queryClient.invalidateQueries({ queryKey: ['me'] })
+    },
+  })
+}
+
+/** Avatarni o'chirish — null qiymat yuboriladi. */
+export function useRemoveAvatar() {
+  const queryClient = useQueryClient()
+  const setUser = useAuthStore((s) => s.setUser)
+  return useMutation({
+    mutationFn: authApi.removeAvatar,
+    onSuccess: (data) => {
+      setUser(data)
+      queryClient.invalidateQueries({ queryKey: ['me'] })
+    },
+  })
+}

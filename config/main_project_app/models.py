@@ -93,6 +93,10 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     phone_number = models.CharField(validators=[phone_regex], max_length=15, unique=True)
     email = models.EmailField(unique=True)
+    avatar = models.ImageField(
+        upload_to="user_avatars/", blank=True, null=True,
+        help_text="Profil rasmi (kvadrat shaklida tavsiya etiladi)",
+    )
     role = models.CharField(max_length=20, choices=Role.choices)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)

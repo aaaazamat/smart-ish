@@ -1,12 +1,13 @@
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import {
-  Loader2, AlertCircle, Briefcase, Users, Eye, Heart,
+  AlertCircle, Briefcase, Users, Eye, Heart,
   CheckCircle2, Clock, X, FileText, ArrowRight,
 } from 'lucide-react'
 import { employerApi } from '@/api/endpoints'
 import { useAuthStore } from '@/store/authStore'
 import { formatNumber } from '@/lib/format'
+import { StatCardSkeleton } from '@/components/ui/Skeletons'
 
 function StatCard({ icon: Icon, label, value, color = 'brand', to }) {
   const colors = {
@@ -66,10 +67,22 @@ function DashboardPage() {
   })
 
   if (isLoading) {
+    // Statistika kartochkalari uchun skeleton — haqiqiy layoutni saqlab,
+    // foydalanuvchiga "sahifa hozir keladi" tuyg'usini beradi
     return (
-      <div className="max-w-[1200px] mx-auto px-6 py-16 flex items-center justify-center text-gray-500">
-        <Loader2 className="w-6 h-6 animate-spin mr-2" />
-        Yuklanmoqda...
+      <div className="max-w-[1200px] mx-auto px-6 py-8">
+        <div className="h-8 w-48 mb-6">
+          <StatCardSkeleton />
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <StatCardSkeleton key={i} />
+          ))}
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <StatCardSkeleton />
+          <StatCardSkeleton />
+        </div>
       </div>
     )
   }

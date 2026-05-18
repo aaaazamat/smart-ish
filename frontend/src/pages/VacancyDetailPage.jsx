@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate, useParams, Link } from 'react-router-dom'
 import {
   Heart, MapPin, Building2, Briefcase, GraduationCap, Clock,
-  Calendar, Users, Eye, Globe, ArrowLeft, AlertCircle, Loader2,
+  Calendar, Users, Eye, Globe, ArrowLeft, AlertCircle,
   CheckCircle2, BadgeCheck,
 } from 'lucide-react'
 import { useVacancyDetail, useSimilarVacancies, useToggleLike } from '@/hooks/useVacancies'
@@ -14,6 +14,7 @@ import VacancyCard from '@/components/vacancy/VacancyCard'
 import ApplyModal from '@/components/vacancy/ApplyModal'
 import MatchCard from '@/components/ai/MatchCard'
 import { useMyResume } from '@/hooks/useResume'
+import { VacancyDetailSkeleton } from '@/components/ui/Skeletons'
 
 function InfoItem({ icon: Icon, label, value }) {
   if (!value) return null
@@ -65,9 +66,8 @@ function VacancyDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="max-w-[1400px] mx-auto px-6 py-16 flex items-center justify-center text-gray-500">
-        <Loader2 className="w-6 h-6 animate-spin mr-2" />
-        Yuklanmoqda...
+      <div className="max-w-[1400px] mx-auto px-6 py-8">
+        <VacancyDetailSkeleton />
       </div>
     )
   }

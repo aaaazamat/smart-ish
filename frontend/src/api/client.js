@@ -2,6 +2,20 @@ import axios from 'axios'
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
 
+// WebSocket bosh URL: VITE_WS_URL yoki API_BASE_URL dan derivatsiya
+//   API:  http://localhost:8000/api  →  WS: ws://localhost:8000
+//   API: https://api.example.com/api →  WS: wss://api.example.com
+export const WS_BASE_URL = (() => {
+  if (import.meta.env.VITE_WS_URL) return import.meta.env.VITE_WS_URL
+  try {
+    const url = new URL(API_BASE_URL)
+    const proto = url.protocol === 'https:' ? 'wss:' : 'ws:'
+    return `${proto}//${url.host}`
+  } catch {
+    return 'ws://localhost:8000'
+  }
+})()
+
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
   headers: { 'Content-Type': 'application/json' },

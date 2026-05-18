@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { Phone, Mail, Send, Globe, Camera, Video } from 'lucide-react'
+import Logo from '@/components/ui/Logo'
 
 function Footer() {
   return (
@@ -8,25 +9,10 @@ function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
           {/* Logo */}
           <div>
-            <Link to="/" className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-full bg-brand-500 flex items-center justify-center">
-                <svg
-                  viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3.5"
-                  strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"
-                >
-                  <path d="M5 12.5l4.5 4.5L19 7.5" />
-                </svg>
-              </div>
-              <div className="leading-tight">
-                <div className="text-xl font-extrabold tracking-wide">OSON ISH</div>
-                <div className="text-[9px] text-brand-200 tracking-[0.18em] mt-0.5">
-                  BIZ BILAN BARCHASI OSON
-                </div>
-              </div>
-            </Link>
+            <Logo invert />
             <p className="text-sm text-brand-200 mt-4 max-w-xs">
-              O'zbekistonda ish izlash va ish beruvchilarni nomzodlar bilan bog'lovchi
-              ishonchli raqamli platforma.
+              Sun'iy intellekt yordamida ish izlash va ish beruvchilarni nomzodlar
+              bilan bog'lovchi zamonaviy platforma.
             </p>
           </div>
 
@@ -92,7 +78,7 @@ function Footer() {
         </div>
 
         <div className="mt-10 pt-6 border-t border-white/10 flex flex-col sm:flex-row justify-between gap-3 text-xs text-brand-300">
-          <div>© {new Date().getFullYear()} OSON ISH. Barcha huquqlar himoyalangan.</div>
+          <div>© {new Date().getFullYear()} SmartIsh. Barcha huquqlar himoyalangan.</div>
           <div className="flex gap-4">
             <a href="#" className="hover:text-white transition">Maxfiylik siyosati</a>
             <a href="#" className="hover:text-white transition">Foydalanuvchi kelishuvi</a>

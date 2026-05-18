@@ -25,6 +25,23 @@ export const authApi = {
     apiClient.post('/auth/logout/', { refresh }).then((r) => r.data),
   me: () =>
     apiClient.get('/auth/me/').then((r) => r.data),
+  // Logged-in foydalanuvchi o'z parolini o'zgartiradi
+  // body: { old_password, new_password, new_password_confirm }
+  changePassword: (data) =>
+    apiClient.post('/auth/change-password/', data).then((r) => r.data),
+  // Avatar yuklash (multipart/form-data)
+  uploadAvatar: (file) => {
+    const form = new FormData()
+    form.append('avatar', file)
+    return apiClient
+      .patch('/auth/me/', form, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+      .then((r) => r.data)
+  },
+  // Avatarni o'chirish
+  removeAvatar: () =>
+    apiClient.patch('/auth/me/', { avatar: null }).then((r) => r.data),
 }
 
 // ─── reference ──────────────────────────────────
@@ -71,6 +88,8 @@ export const resumeApi = {
   getMy: () => apiClient.get('/resumes/my/').then((r) => r.data),
   create: (data) => apiClient.post('/resumes/my/', data).then((r) => r.data),
   update: (data) => apiClient.patch('/resumes/my/', data).then((r) => r.data),
+  // "Mening rezyumemni kim ko'rdi" — statistika va oxirgi 50 ta ko'rilish
+  getMyViews: () => apiClient.get('/resumes/my/views/').then((r) => r.data),
 }
 
 export const workExperienceApi = crud('/resumes/my/work-experiences/')
@@ -129,6 +148,27 @@ export const aiApi = {
 export const employerApi = {
   dashboard: () =>
     apiClient.get('/employer/monitoring/dashboard/').then((r) => r.data),
+  // O'z tashkilot ma'lumotlari (logo bilan)
+  getOrganization: () =>
+    apiClient.get('/employer/organization/').then((r) => r.data),
+  // Tashkilot tahrirlash (multipart bo'lsa logo ham yangilanadi)
+  updateOrganization: (data) => {
+    // Agar logo File bo'lsa, multipart sifatida yuborish
+    if (data.logo instanceof File) {
+      const form = new FormData()
+      for (const [key, value] of Object.entries(data)) {
+        if (value !== undefined && value !== null) form.append(key, value)
+      }
+      return apiClient
+        .patch('/employer/organization/', form, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        })
+        .then((r) => r.data)
+    }
+    return apiClient
+      .patch('/employer/organization/', data)
+      .then((r) => r.data)
+  },
   vacancies: crud('/employer/vacancies/'),
   vacancyToggleActive: (id) =>
     apiClient

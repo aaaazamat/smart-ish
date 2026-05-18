@@ -2,12 +2,13 @@ import { useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import {
-  Search, ChevronDown, Loader2, AlertCircle, Users, MapPin, User as UserIcon,
+  Search, ChevronDown, AlertCircle, Users, MapPin, User as UserIcon,
 } from 'lucide-react'
 import { apiClient } from '@/api/client'
 import { useRegions, useDistricts, useProfessions } from '@/hooks/useReferences'
 import { CAREER_LEVEL_OPTIONS } from '@/lib/constants'
 import { formatNumber, formatDate } from '@/lib/format'
+import { SkeletonList, ResumeCardSkeleton } from '@/components/ui/Skeletons'
 
 function FilterSelect({ label, value, onChange, options, placeholder, disabled }) {
   return (
@@ -160,10 +161,7 @@ function ResumeListPage() {
           </p>
 
           {isLoading && (
-            <div className="flex items-center justify-center py-16 text-gray-500">
-              <Loader2 className="w-6 h-6 animate-spin mr-2" />
-              Yuklanmoqda...
-            </div>
+            <SkeletonList count={5} Component={ResumeCardSkeleton} className="space-y-3" />
           )}
 
           {isError && (

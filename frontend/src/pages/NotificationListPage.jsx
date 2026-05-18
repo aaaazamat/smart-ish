@@ -1,8 +1,9 @@
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import {
-  Bell, Check, CheckCheck, Trash2, Loader2, Inbox,
+  Bell, Check, CheckCheck, Trash2, Inbox,
   Briefcase, FileText, UserPlus, AlertCircle, Heart,
 } from 'lucide-react'
+import { SkeletonList, NotificationItemSkeleton } from '@/components/ui/Skeletons'
 import {
   useNotifications,
   useMarkRead,
@@ -164,10 +165,7 @@ function NotificationListPage() {
       </div>
 
       {isLoading && (
-        <div className="flex items-center justify-center py-16 text-gray-500">
-          <Loader2 className="w-6 h-6 animate-spin mr-2" />
-          Yuklanmoqda...
-        </div>
+        <SkeletonList count={4} Component={NotificationItemSkeleton} className="space-y-2" />
       )}
 
       {isError && (

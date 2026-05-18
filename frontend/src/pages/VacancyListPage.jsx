@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { Search, ChevronDown, AlertCircle, Loader2 } from 'lucide-react'
+import { Search, ChevronDown, AlertCircle } from 'lucide-react'
+import { SkeletonList, VacancyCardSkeleton } from '@/components/ui/Skeletons'
 import { useVacancies } from '@/hooks/useVacancies'
 import { useAuthStore } from '@/store/authStore'
 import { useMyResume } from '@/hooks/useResume'
@@ -150,10 +151,7 @@ function VacancyListPage() {
           </div>
 
           {isLoading && (
-            <div className="flex items-center justify-center py-16 text-gray-500">
-              <Loader2 className="w-6 h-6 animate-spin mr-2" />
-              Yuklanmoqda...
-            </div>
+            <SkeletonList count={5} Component={VacancyCardSkeleton} className="space-y-3" />
           )}
 
           {isError && (

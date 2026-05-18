@@ -21,6 +21,19 @@ export function useMyResume() {
   })
 }
 
+/**
+ * Mening rezyumemni kim ko'rgan — statistika va oxirgi 50 ta ko'rilish.
+ * Har 30 sekundda yangilanadi (real-time deyarli).
+ */
+export function useMyResumeViews() {
+  return useQuery({
+    queryKey: ['my-resume-views'],
+    queryFn: resumeApi.getMyViews,
+    refetchInterval: 30_000,
+    staleTime: 15_000,
+  })
+}
+
 export function useCreateResume() {
   const queryClient = useQueryClient()
   return useMutation({

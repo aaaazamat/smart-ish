@@ -93,3 +93,20 @@ frontend/.env.local
 # ─────────────────────────────────────────────
 celerybeat-schedule
 celerybeat.pid
+
+# ─────────────────────────────────────────────
+# Diplom ishi (Word fayli) — alohida saqlanadi
+# Maxfiy bo'lmasligi mumkin, lekin kod bilan birga commit qilinmaydi
+# ─────────────────────────────────────────────
+*.docx
+diplom_text_current.txt
+unpacked/
+unpacked_v2/
+
+# ─────────────────────────────────────────────
+# Vaqtinchalik skriptlar
+# ─────────────────────────────────────────────
+rewrite_section1.py
+generate_diploma.js
+_test_*.py
+config/_test_*.py
