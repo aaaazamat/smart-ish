@@ -13,8 +13,6 @@ import Logo from '@/components/ui/Logo'
 function LoginPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const next = searchParams.get('next') || '/'
-
   const login = useLogin()
 
   const {
@@ -29,7 +27,19 @@ function LoginPage() {
 
   const onSubmit = (values) => {
     login.mutate(values, {
-      onSuccess: () => navigate(next, { replace: true }),
+      onSuccess: (data) => {
+        // Agar foydalanuvchi maxsus sahifadan (`?next=...`) kelgan bo'lsa,
+        // o'sha sahifaga qaytaramiz. Aks holda — roli bo'yicha yo'naltiramiz.
+        const explicit = searchParams.get('next')
+        let target = explicit
+        if (!target) {
+          const role = data?.role
+          if (role === 'admin') target = '/admin/dashboard'
+          else if (role === 'employer') target = '/employer/dashboard'
+          else target = '/'  // job_seeker yoki guest — bosh sahifa
+        }
+        navigate(target, { replace: true })
+      },
       onError: (error) => applyApiErrorsToForm(error, setError),
     })
   }
