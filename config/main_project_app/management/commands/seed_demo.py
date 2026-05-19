@@ -178,9 +178,26 @@ class Command(BaseCommand):
             "--clear", action="store_true",
             help="Avval barcha demo ma'lumotlarni o'chirish",
         )
+        parser.add_argument(
+            "--idempotent", action="store_true",
+            help="Agar yetarli vakansiya allaqachon bo'lsa, qaytadan yaratmaslik "
+                 "(production'da har deploy paytida ishga tushirish uchun xavfsiz)",
+        )
 
     @transaction.atomic
     def handle(self, *args, **opts):
+        # Idempotent rejim: yetarli ma'lumot bo'lsa, chiqib ketadi
+        # (--clear bilan birga ishlatilsa, --clear ustun keladi)
+        if opts.get("idempotent") and not opts["clear"]:
+            existing = Vacancy.objects.count()
+            threshold = max(opts["vacancies"] // 2, 10)
+            if existing >= threshold:
+                self.stdout.write(self.style.SUCCESS(
+                    f"Demo ma'lumotlar yetarli ({existing} ta vakansiya >= "
+                    f"{threshold}) — qaytadan yaratish kerak emas"
+                ))
+                return
+
         if opts["clear"]:
             self.stdout.write("Demo ma'lumotlar o'chirilmoqda...")
             Application.objects.all().delete()

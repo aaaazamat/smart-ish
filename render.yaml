@@ -99,6 +99,21 @@ services:
       - key: BOOTSTRAP_ADMIN_PASSWORD
         sync: false           # kuchli parol
 
+      # ── Demo ma'lumotlar (diplom himoyasi uchun) ──
+      # SEED_DEMO=True qilsangiz, keyingi deploy paytida 40 ta vakansiya,
+      # 30 ta rezyume, 60 ta ariza yaratiladi. Idempotent — qayta deploy
+      # paytida ham yangidan yaratmaydi (bir marta to'ldirilsa, yetadi).
+      - key: SEED_DEMO
+        sync: false           # True/False
+      - key: SEED_DEMO_VACANCIES
+        sync: false           # 40 (default)
+      - key: SEED_DEMO_SEEKERS
+        sync: false           # 30 (default)
+      - key: SEED_DEMO_EMPLOYERS
+        sync: false           # 8  (default)
+      - key: SEED_DEMO_APPLICATIONS
+        sync: false           # 60 (default)
+
       # ── AI (Google Gemini) ──
       - key: GEMINI_API_KEY
         sync: false

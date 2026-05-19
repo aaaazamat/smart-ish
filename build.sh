@@ -44,13 +44,31 @@ if [ -n "${BOOTSTRAP_ADMIN_PHONE:-}" ] && \
    [ -n "${BOOTSTRAP_ADMIN_PASSWORD:-}" ]; then
   echo ""
   echo "──────────────────────────────────────"
-  echo " 4/4  Bootstrap admin yaratish..."
+  echo " 4/5  Bootstrap admin yaratish..."
   echo "──────────────────────────────────────"
   python manage.py bootstrap_admin \
       --phone "$BOOTSTRAP_ADMIN_PHONE" \
       --email "$BOOTSTRAP_ADMIN_EMAIL" \
       --password "$BOOTSTRAP_ADMIN_PASSWORD" \
       --update || echo "Admin yaratishda xato (davom etiladi)"
+fi
+
+# ────────────────────────────────────────────────────────────────
+# Demo ma'lumotlar (SEED_DEMO=True bo'lsa)
+# Idempotent — yetarli ma'lumot bor bo'lsa, qaytadan yaratmaydi.
+# Diplom himoyasi uchun real ko'rinishdagi vakansiya/rezyumelar.
+# ────────────────────────────────────────────────────────────────
+if [ "${SEED_DEMO:-False}" = "True" ] || [ "${SEED_DEMO:-False}" = "true" ]; then
+  echo ""
+  echo "──────────────────────────────────────"
+  echo " 5/5  Demo ma'lumotlar yaratish..."
+  echo "──────────────────────────────────────"
+  python manage.py seed_demo \
+      --vacancies "${SEED_DEMO_VACANCIES:-40}" \
+      --seekers "${SEED_DEMO_SEEKERS:-30}" \
+      --employers "${SEED_DEMO_EMPLOYERS:-8}" \
+      --applications "${SEED_DEMO_APPLICATIONS:-60}" \
+      --idempotent || echo "Demo yaratishda xato (davom etiladi)"
 fi
 
 echo ""
