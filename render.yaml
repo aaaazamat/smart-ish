@@ -89,6 +89,16 @@ services:
       - key: FRONTEND_URL
         sync: false           # Vercel URL'i
 
+      # ── Bootstrap admin (birinchi deploy'da avtomatik yaratiladi) ──
+      # Render free tier'da Shell yo'q, shuning uchun admin shu env vars
+      # orqali yaratiladi. Idempotent — qayta deploy paytida ham xavfsiz.
+      - key: BOOTSTRAP_ADMIN_PHONE
+        sync: false           # +998900000000
+      - key: BOOTSTRAP_ADMIN_EMAIL
+        sync: false           # admin@osonish.uz
+      - key: BOOTSTRAP_ADMIN_PASSWORD
+        sync: false           # kuchli parol
+
       # ── AI (Google Gemini) ──
       - key: GEMINI_API_KEY
         sync: false

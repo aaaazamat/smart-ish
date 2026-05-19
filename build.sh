@@ -33,5 +33,25 @@ echo " 3/3  Ma'lumotlar bazasi migratsiyalari..."
 echo "──────────────────────────────────────"
 python manage.py migrate --no-input
 
+# ────────────────────────────────────────────────────────────────
+# Bootstrap admin foydalanuvchi yaratish (faqat env vars berilgan bo'lsa)
+# Render free tier'da Shell yo'q, shuning uchun admin avtomatik yaratiladi.
+# Birinchi deploy'da yangi admin yaratiladi, keyingilarida `--update`
+# bilan parol/email yangilanadi (idempotent).
+# ────────────────────────────────────────────────────────────────
+if [ -n "${BOOTSTRAP_ADMIN_PHONE:-}" ] && \
+   [ -n "${BOOTSTRAP_ADMIN_EMAIL:-}" ] && \
+   [ -n "${BOOTSTRAP_ADMIN_PASSWORD:-}" ]; then
+  echo ""
+  echo "──────────────────────────────────────"
+  echo " 4/4  Bootstrap admin yaratish..."
+  echo "──────────────────────────────────────"
+  python manage.py bootstrap_admin \
+      --phone "$BOOTSTRAP_ADMIN_PHONE" \
+      --email "$BOOTSTRAP_ADMIN_EMAIL" \
+      --password "$BOOTSTRAP_ADMIN_PASSWORD" \
+      --update || echo "Admin yaratishda xato (davom etiladi)"
+fi
+
 echo ""
 echo "Build muvaffaqiyatli yakunlandi."
