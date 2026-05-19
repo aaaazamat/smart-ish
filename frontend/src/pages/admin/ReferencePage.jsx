@@ -1,7 +1,7 @@
 import { useSearchParams } from 'react-router-dom'
 import {
   MapPin, Map, Briefcase, Sparkles, Building2, GraduationCap,
-  BookOpen, Database,
+  BookOpen, Database, Building,
 } from 'lucide-react'
 import {
   adminRegions,
@@ -11,6 +11,7 @@ import {
   adminIndustries,
   adminUniversities,
   adminDirections,
+  adminOrganizations,
 } from '@/hooks/useAdminReference'
 import { cn } from '@/lib/cn'
 import ReferenceCrud from '@/components/admin/ReferenceCrud'
@@ -23,6 +24,7 @@ const TABS = [
   { key: 'industries', label: 'Sohalar', icon: Building2 },
   { key: 'universities', label: 'Universitetlar', icon: GraduationCap },
   { key: 'directions', label: 'Yo\'nalishlar', icon: BookOpen },
+  { key: 'organizations', label: 'Tashkilotlar', icon: Building },
 ]
 
 function DistrictsCrud() {
@@ -53,6 +55,21 @@ function DirectionsCrud() {
   )
 }
 
+function OrganizationsCrud() {
+  // Tashkilot CRUD — Reference'dan ko'ra ko'proq maydon (INN, website)
+  return (
+    <ReferenceCrud
+      title="Tashkilotlar"
+      hooks={adminOrganizations}
+      extraFields={[
+        { key: 'inn', label: 'INN', placeholder: '300000000', type: 'text' },
+        { key: 'website', label: 'Veb-sayt', placeholder: 'https://example.uz', type: 'url' },
+        { key: 'description', label: "Tavsif", placeholder: 'Qisqacha tavsif', type: 'text' },
+      ]}
+    />
+  )
+}
+
 function AdminReferencePage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const tab = searchParams.get('tab') || 'regions'
@@ -70,6 +87,7 @@ function AdminReferencePage() {
       case 'industries': return <ReferenceCrud title="Sohalar" hooks={adminIndustries} />
       case 'universities': return <ReferenceCrud title="Universitetlar" hooks={adminUniversities} />
       case 'directions': return <DirectionsCrud />
+      case 'organizations': return <OrganizationsCrud />
       default: return null
     }
   }

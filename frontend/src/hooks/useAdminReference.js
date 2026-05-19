@@ -38,3 +38,6 @@ export const adminSkills = makeRefHooks(adminApi.reference.skills, 'admin-skills
 export const adminIndustries = makeRefHooks(adminApi.reference.industries, 'admin-industries')
 export const adminUniversities = makeRefHooks(adminApi.reference.universities, 'admin-universities')
 export const adminDirections = makeRefHooks(adminApi.reference.directions, 'admin-directions')
+
+// Tashkilotlar — reference emas, lekin admin tomonidan boshqariladi
+export const adminOrganizations = makeRefHooks(adminApi.organizations, 'admin-organizations')

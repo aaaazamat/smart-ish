@@ -298,6 +298,7 @@ class AdminOrganizationListCreateView(generics.ListCreateAPIView):
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ["name", "inn", "description"]
     ordering = ["name"]
+    pagination_class = None   # Reference-style — bir sahifada hammasini ko'rsatadi
     queryset = Organization.objects.select_related("region", "district").all()
 
 
@@ -318,9 +319,16 @@ class AdminOrganizationDetailView(generics.RetrieveUpdateDestroyAPIView):
 # ══════════════════════════════════════════════
 
 class _BaseReferenceCRUD:
-    """Reference data uchun umumiy permissions"""
+    """Reference data uchun umumiy permissions.
+
+    Pagination o'chirilgan — kichik to'plamlar (kasblar 30-60 ta,
+    viloyatlar 8 ta, ko'nikmalar 60-80 ta) bir sahifada to'liq ko'rinishi
+    uchun. Aks holda admin yangi qo'shilgan elementni topa olmaydi
+    (2-sahifaga tushib ketadi).
+    """
     permission_classes = [IsAuthenticated, IsAdmin]
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    pagination_class = None
 
 
 class AdminRegionListCreateView(_BaseReferenceCRUD, generics.ListCreateAPIView):

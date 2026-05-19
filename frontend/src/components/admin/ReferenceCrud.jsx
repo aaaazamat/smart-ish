@@ -15,6 +15,8 @@ import Button from '@/components/ui/Button'
  * - parentLabel?: string (e.g. "Hudud")
  * - parentOptions?: array of { id, name }
  * - parentDisplayKey?: string (key to show in list, e.g. "region_name")
+ * - extraFields?: array of additional fields:
+ *     [{ key: "inn", label: "INN", placeholder: "...", required?: bool, type?: "text"|"url" }]
  */
 function ReferenceCrud({
   title,
@@ -23,6 +25,7 @@ function ReferenceCrud({
   parentLabel,
   parentOptions = [],
   parentDisplayKey,
+  extraFields = [],
 }) {
   const { data: items = [], isLoading } = hooks.useList()
   const create = hooks.useCreate()
@@ -33,11 +36,13 @@ function ReferenceCrud({
   const [editingId, setEditingId] = useState(null)
   const [name, setName] = useState('')
   const [parentId, setParentId] = useState('')
+  const [extraValues, setExtraValues] = useState({})
   const [error, setError] = useState(null)
 
   const reset = () => {
     setName('')
     setParentId('')
+    setExtraValues({})
     setError(null)
     setAdding(false)
     setEditingId(null)
@@ -48,6 +53,12 @@ function ReferenceCrud({
     setAdding(false)
     setName(item.name)
     setParentId(item[parentField]?.toString() || item[parentField + '_id']?.toString() || '')
+    // Qo'shimcha maydonlarni mavjud qiymatlar bilan to'ldirish
+    const extras = {}
+    for (const f of extraFields) {
+      extras[f.key] = item[f.key] ?? ''
+    }
+    setExtraValues(extras)
     setError(null)
   }
 
@@ -62,8 +73,19 @@ function ReferenceCrud({
       setError(`${parentLabel} tanlash majburiy`)
       return
     }
+    // Required extra maydonlarni tekshirish
+    for (const f of extraFields) {
+      if (f.required && !(extraValues[f.key] || '').toString().trim()) {
+        setError(`${f.label} majburiy`)
+        return
+      }
+    }
     const payload = { name: name.trim() }
     if (parentField) payload[parentField] = Number(parentId)
+    for (const f of extraFields) {
+      const v = extraValues[f.key]
+      if (v !== undefined && v !== '') payload[f.key] = v
+    }
 
     const onError = (err) => setError(getApiError(err))
 
@@ -108,7 +130,7 @@ function ReferenceCrud({
               {error}
             </div>
           )}
-          <div className={parentField ? 'grid grid-cols-1 md:grid-cols-2 gap-3 mb-3' : 'mb-3'}>
+          <div className={(parentField || extraFields.length > 0) ? 'grid grid-cols-1 md:grid-cols-2 gap-3 mb-3' : 'mb-3'}>
             {parentField && (
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">{parentLabel} *</label>
@@ -129,6 +151,21 @@ function ReferenceCrud({
                 autoFocus
               />
             </div>
+
+            {/* Qo'shimcha maydonlar (masalan, tashkilot uchun INN, website) */}
+            {extraFields.map((f) => (
+              <div key={f.key}>
+                <label className="block text-xs font-medium text-gray-700 mb-1">
+                  {f.label}{f.required && ' *'}
+                </label>
+                <Input
+                  type={f.type || 'text'}
+                  value={extraValues[f.key] || ''}
+                  onChange={(e) => setExtraValues((s) => ({ ...s, [f.key]: e.target.value }))}
+                  placeholder={f.placeholder || ''}
+                />
+              </div>
+            ))}
           </div>
           <div className="flex gap-2 justify-end">
             <Button type="button" variant="secondary" size="sm" onClick={reset}>
