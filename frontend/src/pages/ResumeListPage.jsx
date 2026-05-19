@@ -132,7 +132,7 @@ function ResumeListPage() {
   const hasFilters = !!(filters.search || filters.region || filters.district || filters.profession || filters.career_level)
 
   return (
-    <div className="max-w-[1300px] mx-auto px-6 py-8">
+    <div className="max-w-[1300px] mx-auto px-4 sm:px-6 py-6 sm:py-8">
       <h1 className="text-4xl font-bold text-gray-900 mb-6">Rezyumelar</h1>
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6">

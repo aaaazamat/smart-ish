@@ -55,7 +55,7 @@ function EmployerApplicationDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="max-w-[1100px] mx-auto px-6 py-16 flex items-center justify-center text-gray-500">
+      <div className="max-w-[1100px] mx-auto px-4 sm:px-6 py-10 sm:py-16 flex items-center justify-center text-gray-500">
         <Loader2 className="w-6 h-6 animate-spin mr-2" /> Yuklanmoqda...
       </div>
     )
@@ -63,7 +63,7 @@ function EmployerApplicationDetailPage() {
 
   if (isError || !app) {
     return (
-      <div className="max-w-[800px] mx-auto px-6 py-12">
+      <div className="max-w-[800px] mx-auto px-4 sm:px-6 py-8 sm:py-12">
         <div className="bg-red-50 border border-red-200 text-red-700 p-5 rounded-xl flex items-start gap-3">
           <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
           <span>{error?.message || 'Ariza topilmadi'}</span>
@@ -78,7 +78,7 @@ function EmployerApplicationDetailPage() {
   const statusColor = APPLICATION_STATUS_COLORS[app.status] || 'bg-gray-100 text-gray-700'
 
   return (
-    <div className="max-w-[1100px] mx-auto px-6 py-8">
+    <div className="max-w-[1100px] mx-auto px-4 sm:px-6 py-6 sm:py-8">
       <Link
         to="/employer/applications"
         className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-brand-500 mb-4 transition"

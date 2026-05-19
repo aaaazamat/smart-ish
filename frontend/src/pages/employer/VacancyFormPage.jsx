@@ -29,7 +29,7 @@ function VacancyFormPage() {
 
   if (isEdit && isLoading) {
     return (
-      <div className="max-w-[900px] mx-auto px-6 py-16 flex items-center justify-center text-gray-500">
+      <div className="max-w-[900px] mx-auto px-4 sm:px-6 py-10 sm:py-16 flex items-center justify-center text-gray-500">
         <Loader2 className="w-6 h-6 animate-spin mr-2" /> Yuklanmoqda...
       </div>
     )
@@ -37,14 +37,14 @@ function VacancyFormPage() {
 
   if (isEdit && !vacancy) {
     return (
-      <div className="max-w-[900px] mx-auto px-6 py-16">
+      <div className="max-w-[900px] mx-auto px-4 sm:px-6 py-10 sm:py-16">
         <p className="text-gray-500">Vakansiya topilmadi</p>
       </div>
     )
   }
 
   return (
-    <div className="max-w-[900px] mx-auto px-6 py-8">
+    <div className="max-w-[900px] mx-auto px-4 sm:px-6 py-6 sm:py-8">
       <Link
         to="/employer/vacancies"
         className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-brand-500 mb-4 transition"

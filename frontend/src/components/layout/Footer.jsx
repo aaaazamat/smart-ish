@@ -4,9 +4,9 @@ import Logo from '@/components/ui/Logo'
 
 function Footer() {
   return (
-    <footer className="bg-brand-950 text-white mt-16">
-      <div className="max-w-[1400px] mx-auto px-6 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+    <footer className="bg-brand-950 text-white mt-12 sm:mt-16">
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-8 sm:py-12">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 sm:gap-10">
           {/* Logo */}
           <div>
             <Logo invert />

@@ -2,14 +2,8 @@ import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { useState, useRef, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
-  Heart,
-  Bell,
-  MoreHorizontal,
-  HelpCircle,
-  ChevronDown,
-  LogOut,
-  UserCircle,
-  FileText,
+  Heart, Bell, ChevronDown, LogOut, UserCircle, FileText,
+  Menu, X,
 } from 'lucide-react'
 import { cn } from '@/lib/cn'
 import { useAuthStore } from '@/store/authStore'
@@ -44,20 +38,6 @@ const NAV_BY_ROLE = {
   ],
 }
 
-// Logo komponenti @/components/ui/Logo'da
-
-function IconButton({ children, label, ...props }) {
-  return (
-    <button
-      type="button"
-      aria-label={label}
-      className="p-2 rounded-full text-gray-500 hover:text-brand-500 hover:bg-gray-50 transition"
-      {...props}
-    >
-      {children}
-    </button>
-  )
-}
 
 function IconLink({ to, label, badge, children }) {
   return (
@@ -75,6 +55,7 @@ function IconLink({ to, label, badge, children }) {
     </Link>
   )
 }
+
 
 function ProfileMenu() {
   const { t } = useTranslation()
@@ -104,16 +85,20 @@ function ProfileMenu() {
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="flex items-center gap-2 p-1 pr-2 rounded-full hover:bg-gray-50 transition"
+        className="flex items-center gap-1.5 p-1 sm:pr-2 rounded-full hover:bg-gray-50 transition"
       >
-        <div className="w-8 h-8 rounded-full bg-brand-50 flex items-center justify-center">
-          <UserCircle className="w-5 h-5 text-brand-500" />
+        <div className="w-8 h-8 rounded-full bg-brand-50 flex items-center justify-center overflow-hidden">
+          {user?.avatar ? (
+            <img src={user.avatar} alt="" className="w-full h-full object-cover" />
+          ) : (
+            <UserCircle className="w-5 h-5 text-brand-500" />
+          )}
         </div>
-        <ChevronDown className="w-4 h-4 text-gray-500" />
+        <ChevronDown className="hidden sm:block w-4 h-4 text-gray-500" />
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-xl border border-gray-100 shadow-lg overflow-hidden z-50">
+        <div className="absolute right-0 top-full mt-2 w-60 bg-white rounded-xl border border-gray-100 shadow-lg overflow-hidden z-50">
           <div className="px-4 py-3 border-b border-gray-100">
             <div className="text-sm font-semibold text-gray-900 truncate">
               {user?.phone_number || 'Foydalanuvchi'}
@@ -152,24 +137,106 @@ function ProfileMenu() {
   )
 }
 
+
+/**
+ * MobileMenu — telefon ekranida slide-in panel.
+ * Hamburger tugma bosilganda chiqadi. Backdrop'ga bosish bilan yopiladi.
+ */
+function MobileMenu({ open, onClose, links, isAuthenticated, t }) {
+  // Body scroll'ni bloklash menu ochilganda
+  useEffect(() => {
+    if (open) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => { document.body.style.overflow = '' }
+  }, [open])
+
+  if (!open) return null
+
+  return (
+    <>
+      {/* Backdrop */}
+      <div
+        className="fixed inset-0 bg-black/50 z-40 lg:hidden animate-fade-in"
+        onClick={onClose}
+      />
+
+      {/* Drawer (o'ngdan chiqadi) */}
+      <div className="fixed inset-y-0 right-0 w-[85vw] max-w-sm bg-white z-50 lg:hidden shadow-2xl flex flex-col animate-slide-in-right">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+          <Logo />
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-2 rounded-full text-gray-500 hover:bg-gray-100"
+            aria-label="Yopish"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
+          {links.map((link) => (
+            <NavLink
+              key={link.to}
+              to={link.to}
+              onClick={onClose}
+              className={({ isActive }) => cn(
+                'block px-4 py-3 rounded-xl text-base font-medium transition',
+                isActive
+                  ? 'bg-brand-50 text-brand-600'
+                  : 'text-gray-700 hover:bg-gray-50',
+              )}
+            >
+              {t(link.key)}
+            </NavLink>
+          ))}
+
+          {!isAuthenticated && (
+            <Link
+              to="/login"
+              onClick={onClose}
+              className="block mt-4 px-4 py-3 rounded-xl text-center text-white font-semibold bg-brand-500 hover:bg-brand-600 transition"
+            >
+              {t('nav.login')}
+            </Link>
+          )}
+        </nav>
+
+        <div className="border-t border-gray-100 px-4 py-3 flex items-center justify-between">
+          <span className="text-xs text-gray-500">Til:</span>
+          <LanguageSwitcher compact />
+        </div>
+      </div>
+    </>
+  )
+}
+
+
 function Header() {
   const { t } = useTranslation()
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
   const user = useAuthStore((s) => s.user)
   useMe()
   const { data: unreadCount = 0 } = useUnreadCount()
+  const [mobileOpen, setMobileOpen] = useState(false)
 
   const role = !isAuthenticated ? 'guest' : user?.role || 'guest'
   const isEmployer = role === 'employer'
   const isAdmin = role === 'admin'
   const visibleLinks = NAV_BY_ROLE[role] || NAV_BY_ROLE.guest
+  const unreadCountValue = isAuthenticated ? (unreadCount?.unread_count ?? unreadCount ?? 0) : 0
 
   return (
-    <header className="sticky top-0 z-50 bg-white border-b border-gray-100">
-      <div className="max-w-[1400px] mx-auto px-6 h-20 flex items-center justify-between gap-6">
+    <header className="sticky top-0 z-30 bg-white border-b border-gray-100">
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 h-16 sm:h-20 flex items-center justify-between gap-2 sm:gap-6">
+        {/* Logo (har doim ko'rinadi) */}
         <Logo />
 
-        <nav className="hidden lg:flex items-center gap-8">
+        {/* Desktop nav (lg dan boshlab) */}
+        <nav className="hidden lg:flex items-center gap-8 flex-1 justify-center">
           {visibleLinks.map((link) => (
             <NavLink
               key={link.to}
@@ -177,7 +244,7 @@ function Header() {
               end={link.end}
               className={({ isActive }) =>
                 cn(
-                  'text-base font-medium transition',
+                  'text-base font-medium transition whitespace-nowrap',
                   isActive
                     ? 'text-brand-500'
                     : 'text-gray-700 hover:text-brand-500'
@@ -189,50 +256,61 @@ function Header() {
           ))}
         </nav>
 
-        <div className="flex items-center gap-1">
-          <IconButton label="Yordam">
-            <HelpCircle className="w-6 h-6" />
-          </IconButton>
+        {/* O'ng tomon: faqat muhim icon'lar mobile'da */}
+        <div className="flex items-center gap-0.5 sm:gap-1">
+          {/* Til (faqat desktopda, mobile'da drawer ichida) */}
+          <div className="hidden sm:block">
+            <LanguageSwitcher />
+          </div>
 
-          <LanguageSwitcher />
-
-
-          {isAuthenticated && !isEmployer && !isAdmin ? (
-            <IconLink to="/vacancies/liked" label="Sevimlilar">
-              <Heart className="w-6 h-6" />
-            </IconLink>
-          ) : !isEmployer && !isAdmin && (
-            <IconButton label="Sevimlilar" onClick={() => {}}>
-              <Heart className="w-6 h-6" />
-            </IconButton>
+          {/* Sevimlilar — faqat job_seeker uchun, desktopda */}
+          {isAuthenticated && !isEmployer && !isAdmin && (
+            <div className="hidden sm:block">
+              <IconLink to="/vacancies/liked" label="Sevimlilar">
+                <Heart className="w-6 h-6" />
+              </IconLink>
+            </div>
           )}
 
-          {isAuthenticated ? (
-            <IconLink to="/notifications" label="Bildirishnomalar" badge={unreadCount}>
-              <Bell className="w-6 h-6" />
+          {/* Bildirishnomalar */}
+          {isAuthenticated && (
+            <IconLink to="/notifications" label="Bildirishnomalar" badge={unreadCountValue}>
+              <Bell className="w-5 h-5 sm:w-6 sm:h-6" />
             </IconLink>
-          ) : (
-            <IconButton label="Bildirishnomalar">
-              <Bell className="w-6 h-6" />
-            </IconButton>
           )}
 
-          <IconButton label="Boshqa">
-            <MoreHorizontal className="w-6 h-6" />
-          </IconButton>
-
+          {/* Profile yoki Kirish */}
           {isAuthenticated ? (
             <ProfileMenu />
           ) : (
             <Link
               to="/login"
-              className="ml-2 px-4 py-2 rounded-lg bg-brand-500 text-white text-sm font-medium hover:bg-brand-600 transition"
+              className="hidden sm:inline-flex ml-2 px-4 py-2 rounded-lg bg-brand-500 text-white text-sm font-medium hover:bg-brand-600 transition whitespace-nowrap"
             >
               {t('nav.login')}
             </Link>
           )}
+
+          {/* Hamburger — faqat mobile'da */}
+          <button
+            type="button"
+            onClick={() => setMobileOpen(true)}
+            className="lg:hidden p-2 rounded-lg text-gray-700 hover:bg-gray-100 transition"
+            aria-label="Menyu"
+          >
+            <Menu className="w-6 h-6" />
+          </button>
         </div>
       </div>
+
+      {/* Mobile drawer menyu */}
+      <MobileMenu
+        open={mobileOpen}
+        onClose={() => setMobileOpen(false)}
+        links={visibleLinks}
+        isAuthenticated={isAuthenticated}
+        t={t}
+      />
     </header>
   )
 }

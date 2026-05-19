@@ -114,7 +114,7 @@ function ApplicationListPage() {
   const total = data?.count || 0
 
   return (
-    <div className="max-w-[1200px] mx-auto px-6 py-8">
+    <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-6 sm:py-8">
       <h1 className="text-3xl font-bold text-gray-900 mb-6">Mening arizalarim</h1>
 
       {stats && stats.total > 0 && (

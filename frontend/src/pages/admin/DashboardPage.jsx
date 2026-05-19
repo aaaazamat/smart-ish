@@ -61,7 +61,7 @@ function AdminDashboardPage() {
     // Admin dashboard skeleton — stat kartochkalar va bo'limlar joyini
     // ko'rsatib turadi
     return (
-      <div className="max-w-[1400px] mx-auto px-6 py-8">
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-6 sm:py-8">
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-6">
           {Array.from({ length: 8 }).map((_, i) => (
             <StatCardSkeleton key={i} />
@@ -78,7 +78,7 @@ function AdminDashboardPage() {
 
   if (isError) {
     return (
-      <div className="max-w-[1400px] mx-auto px-6 py-8">
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-6 sm:py-8">
         <div className="bg-red-50 border border-red-200 text-red-700 p-5 rounded-xl flex items-start gap-3">
           <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
           <span>{error?.message || 'Xato yuz berdi'}</span>
@@ -93,7 +93,7 @@ function AdminDashboardPage() {
   const a = data?.applications || {}
 
   return (
-    <div className="max-w-[1400px] mx-auto px-6 py-8">
+    <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-6 sm:py-8">
       <div className="flex items-center gap-3 mb-6">
         <Shield className="w-7 h-7 text-brand-500" />
         <div>

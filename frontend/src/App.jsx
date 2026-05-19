@@ -41,7 +41,7 @@ const AdminReportsPage = lazy(() => import('@/pages/admin/ReportsPage'))
 // Lazy sahifalar yuklanayotgan paytda ko'rsatiladigan placeholder
 function PageLoader() {
   return (
-    <div className="max-w-[1400px] mx-auto px-6 py-16 flex items-center justify-center text-gray-400">
+    <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-10 sm:py-16 flex items-center justify-center text-gray-400">
       <div className="w-8 h-8 border-2 border-brand-200 border-t-brand-500 rounded-full animate-spin" />
     </div>
   )

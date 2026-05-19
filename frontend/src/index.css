@@ -325,3 +325,53 @@ body {
     transform: translateY(0);
   }
 }
+
+/* ───── Mobile drawer animatsiyalari ───── */
+@keyframes slideInRightFull {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.animate-slide-in-right { animation: slideInRightFull 0.25s ease-out; }
+.animate-fade-in        { animation: fadeIn 0.2s ease-out; }
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+.animate-slide-up { animation: slideUp 0.25s ease-out; }
+
+/* ───── Global mobile yaxshilashlar ───── */
+@media (max-width: 640px) {
+  /* Mobile'da focus zoom oldini olish — input min font-size 16px */
+  input, select, textarea {
+    font-size: 16px;
+  }
+
+  /* Modal va dialog'lar mobile'da to'la ekran chiqishi */
+  .modal-mobile-full {
+    inset: 0 !important;
+    max-width: 100% !important;
+    max-height: 100vh !important;
+    border-radius: 0 !important;
+  }
+
+  /* Horizontal scrollni oldini olish */
+  body {
+    overflow-x: hidden;
+  }
+}
+
+/* Touch device'larda hover effektlarni o'chirish (touch ham hover'ni ko'rsatadi) */
+@media (hover: none) {
+  .hover\:scale-105:hover {
+    transform: none !important;
+  }
+}

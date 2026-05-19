@@ -93,7 +93,7 @@ function AdminReferencePage() {
   }
 
   return (
-    <div className="max-w-[1300px] mx-auto px-6 py-8">
+    <div className="max-w-[1300px] mx-auto px-4 sm:px-6 py-6 sm:py-8">
       <div className="flex items-center gap-3 mb-2">
         <Database className="w-7 h-7 text-brand-500" />
         <h1 className="text-3xl font-bold text-gray-900">Ma'lumotnoma</h1>

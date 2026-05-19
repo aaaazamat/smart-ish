@@ -128,7 +128,7 @@ function NotificationListPage() {
   const hasUnread = items.some((n) => !n.is_read)
 
   return (
-    <div className="max-w-[900px] mx-auto px-6 py-8">
+    <div className="max-w-[900px] mx-auto px-4 sm:px-6 py-6 sm:py-8">
       <div className="flex items-center justify-between flex-wrap gap-3 mb-6">
         <h1 className="text-3xl font-bold text-gray-900">Bildirishnomalar</h1>
         {hasUnread && (

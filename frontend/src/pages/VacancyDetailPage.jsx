@@ -66,7 +66,7 @@ function VacancyDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="max-w-[1400px] mx-auto px-6 py-8">
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-6 sm:py-8">
         <VacancyDetailSkeleton />
       </div>
     )
@@ -74,7 +74,7 @@ function VacancyDetailPage() {
 
   if (isError) {
     return (
-      <div className="max-w-[800px] mx-auto px-6 py-12">
+      <div className="max-w-[800px] mx-auto px-4 sm:px-6 py-8 sm:py-12">
         <div className="bg-red-50 border border-red-200 text-red-700 p-5 rounded-xl flex items-start gap-3">
           <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
           <div>

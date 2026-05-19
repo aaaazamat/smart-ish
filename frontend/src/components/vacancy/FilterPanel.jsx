@@ -1,4 +1,5 @@
-import { ChevronDown } from 'lucide-react'
+import { useState } from 'react'
+import { ChevronDown, SlidersHorizontal, X } from 'lucide-react'
 import {
   useRegions,
   useDistricts,
@@ -37,6 +38,8 @@ function FilterPanel({ filters, onChange, onClear }) {
   const { data: districts } = useDistricts(filters.region)
   const { data: professions } = useProfessions()
   const { data: industries } = useIndustries()
+  // Mobile'da panel default yashirin; "Filtr" tugmasi ostida ochiladi
+  const [mobileOpen, setMobileOpen] = useState(false)
 
   const setField = (key) => (e) => {
     const value = e.target.value || undefined
@@ -48,10 +51,11 @@ function FilterPanel({ filters, onChange, onClear }) {
   }
 
   const hasActive = Object.values(filters).some(Boolean)
+  const activeCount = Object.values(filters).filter(Boolean).length
 
-  return (
-    <aside className="bg-white rounded-2xl border border-gray-200 p-6 h-fit lg:sticky lg:top-28">
-      <div className="flex items-center justify-between mb-6">
+  const filterContent = (
+    <>
+      <div className="flex items-center justify-between mb-5 sm:mb-6">
         <h2 className="text-lg font-semibold text-gray-900">Filtrlar</h2>
         <button
           type="button"
@@ -63,7 +67,7 @@ function FilterPanel({ filters, onChange, onClear }) {
         </button>
       </div>
 
-      <div className="space-y-5">
+      <div className="space-y-4 sm:space-y-5">
         <FilterSelect
           label="Hudud"
           placeholder="Barcha hududlar"
@@ -94,7 +98,70 @@ function FilterPanel({ filters, onChange, onClear }) {
           options={industries}
         />
       </div>
-    </aside>
+    </>
+  )
+
+  return (
+    <>
+      {/* Mobile (< lg): "Filtr" tugmasi va drawer */}
+      <div className="lg:hidden">
+        <button
+          type="button"
+          onClick={() => setMobileOpen(true)}
+          className="w-full flex items-center justify-between bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 transition"
+        >
+          <span className="flex items-center gap-2">
+            <SlidersHorizontal className="w-4 h-4 text-brand-500" />
+            Filtrlar
+          </span>
+          {activeCount > 0 && (
+            <span className="px-2 py-0.5 rounded-full bg-brand-500 text-white text-xs font-semibold">
+              {activeCount}
+            </span>
+          )}
+        </button>
+
+        {/* Bottom-sheet drawer */}
+        {mobileOpen && (
+          <>
+            <div
+              className="fixed inset-0 bg-black/50 z-40 animate-fade-in"
+              onClick={() => setMobileOpen(false)}
+            />
+            <div className="fixed inset-x-0 bottom-0 z-50 bg-white rounded-t-3xl shadow-2xl max-h-[85vh] flex flex-col animate-slide-up">
+              <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 shrink-0">
+                <h3 className="text-base font-semibold text-gray-900">Filtrlar</h3>
+                <button
+                  type="button"
+                  onClick={() => setMobileOpen(false)}
+                  className="p-2 rounded-full text-gray-500 hover:bg-gray-100"
+                  aria-label="Yopish"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <div className="flex-1 overflow-y-auto p-5">
+                {filterContent}
+              </div>
+              <div className="border-t border-gray-100 p-4 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setMobileOpen(false)}
+                  className="w-full py-3 rounded-xl bg-brand-500 text-white font-medium hover:bg-brand-600 transition"
+                >
+                  Ko'rsatish
+                </button>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Desktop (lg+): yon panel */}
+      <aside className="hidden lg:block bg-white rounded-2xl border border-gray-200 p-6 h-fit sticky top-28">
+        {filterContent}
+      </aside>
+    </>
   )
 }
 

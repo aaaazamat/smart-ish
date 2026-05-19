@@ -53,7 +53,7 @@ function ProfilePage() {
 
   if (isLoading) {
     return (
-      <div className="max-w-2xl mx-auto px-6 py-8 space-y-4">
+      <div className="max-w-2xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-4">
         <StatCardSkeleton />
         <StatCardSkeleton />
       </div>
@@ -65,7 +65,7 @@ function ProfilePage() {
   const isEmployer = user?.role === 'employer'
 
   return (
-    <div className="max-w-2xl mx-auto px-6 py-8 space-y-6">
+    <div className="max-w-2xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
       <h1 className="text-3xl font-bold text-gray-900">Mening profilim</h1>
 
       {/* Avatar + asosiy ma'lumotlar */}

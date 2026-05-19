@@ -70,7 +70,7 @@ function DashboardPage() {
     // Statistika kartochkalari uchun skeleton — haqiqiy layoutni saqlab,
     // foydalanuvchiga "sahifa hozir keladi" tuyg'usini beradi
     return (
-      <div className="max-w-[1200px] mx-auto px-6 py-8">
+      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-6 sm:py-8">
         <div className="h-8 w-48 mb-6">
           <StatCardSkeleton />
         </div>
@@ -89,7 +89,7 @@ function DashboardPage() {
 
   if (isError) {
     return (
-      <div className="max-w-[1200px] mx-auto px-6 py-8">
+      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-6 sm:py-8">
         <div className="bg-red-50 border border-red-200 text-red-700 p-5 rounded-xl flex items-start gap-3">
           <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
           <span>{error?.message || 'Xato yuz berdi'}</span>
@@ -102,7 +102,7 @@ function DashboardPage() {
   const a = data?.applications || {}
 
   return (
-    <div className="max-w-[1200px] mx-auto px-6 py-8">
+    <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-6 sm:py-8">
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
         <p className="text-gray-500 mt-1">

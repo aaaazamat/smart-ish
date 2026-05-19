@@ -10,7 +10,7 @@ function LikedVacanciesPage() {
   const total = data?.count || 0
 
   return (
-    <div className="max-w-[1100px] mx-auto px-6 py-8">
+    <div className="max-w-[1100px] mx-auto px-4 sm:px-6 py-6 sm:py-8">
       <div className="flex items-center gap-3 mb-6">
         <Heart className="w-7 h-7 text-red-500 fill-current" />
         <h1 className="text-3xl font-bold text-gray-900">Sevimli vakansiyalar</h1>

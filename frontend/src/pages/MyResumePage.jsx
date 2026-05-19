@@ -419,14 +419,14 @@ function MyResumePage() {
 
   if (isLoading) {
     return (
-      <div className="max-w-[900px] mx-auto px-6 py-16 flex items-center justify-center text-gray-500">
+      <div className="max-w-[900px] mx-auto px-4 sm:px-6 py-10 sm:py-16 flex items-center justify-center text-gray-500">
         <Loader2 className="w-6 h-6 animate-spin mr-2" /> Yuklanmoqda...
       </div>
     )
   }
 
   return (
-    <div className="max-w-[900px] mx-auto px-6 py-8">
+    <div className="max-w-[900px] mx-auto px-4 sm:px-6 py-6 sm:py-8">
       <div className="flex items-center justify-between mb-6 gap-4 flex-wrap">
         <h1 className="text-3xl font-bold text-gray-900">Mening rezyumem</h1>
         {resume && !editing && (

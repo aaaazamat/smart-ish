@@ -73,7 +73,7 @@ function EmployerResumesPage() {
   const hasFilters = !!(filters.search || filters.region || filters.district || filters.profession || filters.career_level)
 
   return (
-    <div className="max-w-[1300px] mx-auto px-6 py-8">
+    <div className="max-w-[1300px] mx-auto px-4 sm:px-6 py-6 sm:py-8">
       <h1 className="text-3xl font-bold text-gray-900 mb-2">Rezyumelarni qidirish</h1>
       <p className="text-gray-500 mb-6">Mos nomzodlarni toping va taklif yuboring</p>
 

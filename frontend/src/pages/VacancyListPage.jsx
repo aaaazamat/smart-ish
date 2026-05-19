@@ -96,27 +96,36 @@ function VacancyListPage() {
   const totalPages = Math.ceil(totalCount / pageSize)
 
   return (
-    <div className="max-w-[1400px] mx-auto px-6 py-8">
-      <h1 className="text-4xl font-bold text-gray-900 mb-6">Vakansiyalar</h1>
+    <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-6 sm:py-8">
+      <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-4 sm:mb-6">Vakansiyalar</h1>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4 sm:gap-6">
         <div>
+          {/* Mobile'da filter tugmasi yuqorida — desktop'da yon panel ko'rinadi */}
+          <div className="lg:hidden mb-4">
+            <FilterPanel
+              filters={filters}
+              onChange={handleFiltersChange}
+              onClear={handleFiltersClear}
+            />
+          </div>
+
           {showRecommendations && <AiRecommendedVacancies />}
 
-          <form onSubmit={handleSearch} className="flex gap-3 mb-5">
+          <form onSubmit={handleSearch} className="flex gap-2 sm:gap-3 mb-4 sm:mb-5">
             <div className="relative flex-1">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <Search className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input
                 type="text"
                 placeholder="Kasb, lavozim nomi"
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
-                className="w-full bg-white border border-gray-200 rounded-xl pl-12 pr-4 h-14 text-base placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition"
+                className="w-full bg-white border border-gray-200 rounded-xl pl-10 sm:pl-12 pr-4 h-12 sm:h-14 text-sm sm:text-base placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition"
               />
             </div>
             <button
               type="submit"
-              className="px-10 h-14 bg-brand-500 text-white rounded-xl font-medium hover:bg-brand-600 transition shrink-0"
+              className="px-4 sm:px-8 lg:px-10 h-12 sm:h-14 bg-brand-500 text-white rounded-xl text-sm sm:text-base font-medium hover:bg-brand-600 transition shrink-0"
             >
               Izlash
             </button>
@@ -201,11 +210,14 @@ function VacancyListPage() {
           )}
         </div>
 
-        <FilterPanel
-          filters={filters}
-          onChange={handleFiltersChange}
-          onClear={handleFiltersClear}
-        />
+        {/* Desktop'da yonda */}
+        <div className="hidden lg:block">
+          <FilterPanel
+            filters={filters}
+            onChange={handleFiltersChange}
+            onClear={handleFiltersClear}
+          />
+        </div>
       </div>
     </div>
   )

@@ -73,8 +73,8 @@ function Hero({ regions }) {
         ))}
       </div>
 
-      <div className="relative max-w-[1400px] mx-auto px-6 py-16 lg:py-28">
-        <div className="grid lg:grid-cols-[1.6fr_1fr] gap-10 items-start">
+      <div className="relative max-w-[1400px] mx-auto px-4 sm:px-6 py-12 sm:py-16 lg:py-28">
+        <div className="grid lg:grid-cols-[1.6fr_1fr] gap-8 sm:gap-10 items-start">
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/15 backdrop-blur-sm border border-white/25 text-xs font-medium mb-6 animate-fade-in-down">
               <Sparkles className="w-3.5 h-3.5 text-amber-300 animate-sparkle" />
@@ -122,25 +122,25 @@ function Hero({ regions }) {
 
         <form
           onSubmit={handleSubmit}
-          className="relative mt-10 lg:mt-12 bg-white rounded-2xl shadow-2xl shadow-black/30 p-2 grid grid-cols-1 md:grid-cols-[2fr_1.2fr_auto] gap-2 max-w-5xl animate-fade-in-up stagger-4"
+          className="relative mt-8 sm:mt-10 lg:mt-12 bg-white rounded-2xl shadow-2xl shadow-black/30 p-2 grid grid-cols-1 md:grid-cols-[2fr_1.2fr_auto] gap-2 max-w-5xl animate-fade-in-up stagger-4"
           style={{ animationFillMode: 'backwards' }}
         >
           <div className="relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <Search className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Kasb, lavozim nomi"
-              className="w-full bg-transparent text-gray-900 rounded-xl pl-12 pr-4 h-14 text-base placeholder:text-gray-400 focus:outline-none"
+              className="w-full bg-transparent text-gray-900 rounded-xl pl-10 sm:pl-12 pr-4 h-12 sm:h-14 text-sm sm:text-base placeholder:text-gray-400 focus:outline-none"
             />
           </div>
-          <div className="relative border-l-0 md:border-l border-gray-200">
-            <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
+          <div className="relative md:border-l border-gray-200">
+            <MapPin className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
             <select
               value={region}
               onChange={(e) => setRegion(e.target.value)}
-              className="w-full appearance-none bg-transparent text-gray-900 rounded-xl pl-12 pr-10 h-14 text-base focus:outline-none cursor-pointer"
+              className="w-full appearance-none bg-transparent text-gray-900 rounded-xl pl-10 sm:pl-12 pr-10 h-12 sm:h-14 text-sm sm:text-base focus:outline-none cursor-pointer"
             >
               <option value="">O'zbekiston bo'ylab</option>
               {regions?.map((r) => (
@@ -150,7 +150,7 @@ function Hero({ regions }) {
           </div>
           <button
             type="submit"
-            className="h-14 px-8 lg:px-12 smartish-gradient-bg hover:opacity-90 text-white font-semibold rounded-xl transition flex items-center justify-center gap-2 hover:shadow-lg hover:shadow-purple-500/40"
+            className="h-12 sm:h-14 px-6 sm:px-8 lg:px-12 smartish-gradient-bg hover:opacity-90 text-white font-semibold rounded-xl transition flex items-center justify-center gap-2 hover:shadow-lg hover:shadow-purple-500/40"
           >
             <Search className="w-5 h-5" />
             Qidirish
@@ -171,25 +171,25 @@ function StatsBar({ stats }) {
     { icon: Building2, value: stats.organizations, label: 'Tashkilotlar', color: 'text-orange-500', bg: 'bg-orange-50' },
   ]
   return (
-    <section className="relative -mt-8 z-10 max-w-[1400px] mx-auto px-6">
+    <section className="relative -mt-8 z-10 max-w-[1400px] mx-auto px-4 sm:px-6">
       <AnimateOnScroll variant="up">
-        <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-6 lg:p-8 grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-6 items-center hover:shadow-2xl transition-shadow duration-500">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+        <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl border border-gray-100 p-4 sm:p-6 lg:p-8 grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-4 sm:gap-6 items-center hover:shadow-2xl transition-shadow duration-500">
+          <div className="grid grid-cols-3 gap-3 sm:gap-6">
             {items.map((s, i) => {
               const Icon = s.icon
               return (
-                <div key={i} className="flex items-center gap-4 group">
+                <div key={i} className="flex flex-col sm:flex-row items-center sm:items-center gap-2 sm:gap-4 group text-center sm:text-left">
                   <div className={cn(
-                    'w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300',
+                    'w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl flex items-center justify-center shrink-0 group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300',
                     s.bg
                   )}>
-                    <Icon className={cn('w-7 h-7', s.color)} />
+                    <Icon className={cn('w-5 h-5 sm:w-7 sm:h-7', s.color)} />
                   </div>
                   <div>
-                    <div className="text-3xl font-extrabold text-gray-900 leading-none">
+                    <div className="text-xl sm:text-3xl font-extrabold text-gray-900 leading-none">
                       <AnimatedNumber value={s.value || 0} />
                     </div>
-                    <div className="text-sm text-gray-500 mt-1">{s.label}</div>
+                    <div className="text-xs sm:text-sm text-gray-500 mt-0.5 sm:mt-1">{s.label}</div>
                   </div>
                 </div>
               )
@@ -198,14 +198,14 @@ function StatsBar({ stats }) {
           <div className="flex flex-col sm:flex-row gap-2 lg:border-l lg:border-gray-100 lg:pl-6">
             <Link
               to="/register"
-              className="inline-flex items-center justify-center gap-2 px-5 py-3 smartish-gradient-bg text-white rounded-xl font-medium transition hover:shadow-lg hover:shadow-purple-500/40 hover:scale-105"
+              className="inline-flex items-center justify-center gap-2 px-4 sm:px-5 py-2.5 sm:py-3 smartish-gradient-bg text-white rounded-xl text-sm sm:text-base font-medium transition hover:shadow-lg hover:shadow-purple-500/40 hover:scale-105"
             >
               <FileText className="w-4 h-4" />
               Rezyume joylash
             </Link>
             <Link
               to="/register"
-              className="inline-flex items-center justify-center gap-2 px-5 py-3 bg-white hover:bg-gray-50 text-brand-600 border border-brand-200 rounded-xl font-medium transition hover:scale-105"
+              className="inline-flex items-center justify-center gap-2 px-4 sm:px-5 py-2.5 sm:py-3 bg-white hover:bg-gray-50 text-brand-600 border border-brand-200 rounded-xl text-sm sm:text-base font-medium transition hover:scale-105"
             >
               <Briefcase className="w-4 h-4" />
               Vakansiya joylash
@@ -242,7 +242,7 @@ function HowItWorks() {
     },
   ]
   return (
-    <section className="max-w-[1400px] mx-auto px-6 py-16 lg:py-20">
+    <section className="max-w-[1400px] mx-auto px-4 sm:px-6 py-12 sm:py-16 lg:py-20">
       <AnimateOnScroll variant="up">
         <div className="text-center mb-12">
           <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-3">
@@ -292,7 +292,7 @@ function TopVacanciesSection() {
 
   return (
     <section className="bg-gradient-to-b from-gray-50 to-white">
-      <div className="max-w-[1400px] mx-auto px-6 py-16 lg:py-20">
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-12 sm:py-16 lg:py-20">
         <AnimateOnScroll variant="up">
           <div className="flex items-end justify-between mb-8 flex-wrap gap-3">
             <div>
@@ -364,7 +364,7 @@ const CATEGORIES = [
 function SpecialCategoriesSection() {
   return (
     <section className="bg-gray-50">
-      <div className="max-w-[1400px] mx-auto px-6 py-16 lg:py-20">
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-12 sm:py-16 lg:py-20">
         <AnimateOnScroll variant="up">
           <div className="text-center mb-12">
             <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-3">
@@ -436,7 +436,7 @@ function IndustriesSection() {
   })
 
   return (
-    <section className="max-w-[1400px] mx-auto px-6 py-16 lg:py-20">
+    <section className="max-w-[1400px] mx-auto px-4 sm:px-6 py-12 sm:py-16 lg:py-20">
       <AnimateOnScroll variant="up">
         <div className="text-center mb-12">
           <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-3">
@@ -504,7 +504,7 @@ function FeaturesSection() {
       <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-purple-950/60 to-black/70" />
       <div className="absolute inset-0 bg-grid-dark opacity-30" />
 
-      <div className="relative max-w-[1400px] mx-auto px-6 py-16 lg:py-20">
+      <div className="relative max-w-[1400px] mx-auto px-4 sm:px-6 py-12 sm:py-16 lg:py-20">
         <AnimateOnScroll variant="up">
           <div className="text-center mb-12">
             <h2 className="text-3xl lg:text-4xl font-bold mb-3">
@@ -541,7 +541,7 @@ function FeaturesSection() {
 // ─────────────────────────────────────────────
 function CtaSection() {
   return (
-    <section className="max-w-[1400px] mx-auto px-6 py-16 lg:py-20">
+    <section className="max-w-[1400px] mx-auto px-4 sm:px-6 py-12 sm:py-16 lg:py-20">
       <AnimateOnScroll variant="scale">
         <div className="relative overflow-hidden smartish-gradient-bg rounded-3xl p-8 lg:p-14 text-white text-center hover:shadow-2xl hover:shadow-purple-500/40 transition-shadow duration-500">
           <div className="absolute -top-20 -right-20 w-60 h-60 bg-white/10 rounded-full blur-3xl animate-float-slow" />

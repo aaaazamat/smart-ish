@@ -109,7 +109,7 @@ function OrganizationPage() {
 
   if (isLoading) {
     return (
-      <div className="max-w-2xl mx-auto px-6 py-8 space-y-4">
+      <div className="max-w-2xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-4">
         <StatCardSkeleton />
         <StatCardSkeleton />
       </div>
@@ -118,7 +118,7 @@ function OrganizationPage() {
 
   if (!org) {
     return (
-      <div className="max-w-2xl mx-auto px-6 py-12 text-center">
+      <div className="max-w-2xl mx-auto px-4 sm:px-6 py-8 sm:py-12 text-center">
         <div className="bg-amber-50 border border-amber-200 text-amber-800 p-6 rounded-xl">
           <Building2 className="w-12 h-12 mx-auto mb-3 text-amber-500" />
           <h2 className="font-semibold mb-2">Tashkilot biriktirilmagan</h2>
@@ -134,7 +134,7 @@ function OrganizationPage() {
   const displayLogo = logoPreview || org.logo
 
   return (
-    <form onSubmit={handleSubmit} className="max-w-2xl mx-auto px-6 py-8 space-y-6">
+    <form onSubmit={handleSubmit} className="max-w-2xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
       {/* Sarlavha */}
       <div>
         <Link

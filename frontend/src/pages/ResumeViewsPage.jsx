@@ -62,7 +62,7 @@ function ResumeViewsPage() {
 
   if (isLoading) {
     return (
-      <div className="max-w-4xl mx-auto px-6 py-8 space-y-6">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {Array.from({ length: 3 }).map((_, i) => (
             <StatCardSkeleton key={i} />
@@ -75,7 +75,7 @@ function ResumeViewsPage() {
 
   if (isError || data?.detail) {
     return (
-      <div className="max-w-4xl mx-auto px-6 py-12">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
         <div className="bg-amber-50 border border-amber-200 text-amber-800 p-6 rounded-xl text-center">
           <Eye className="w-12 h-12 mx-auto mb-3 text-amber-500" />
           <h2 className="font-semibold mb-2">Rezyume yaratilmagan</h2>
@@ -94,7 +94,7 @@ function ResumeViewsPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-6 py-8 space-y-6">
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
       {/* Sarlavha */}
       <div>
         <Link
