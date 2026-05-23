@@ -603,14 +603,71 @@ def _broadcast_notification_ws(notification) -> None:
         )
 
 
+def _send_via_brevo_api(email: str, subject: str, message: str) -> None:
+    """
+    Brevo HTTP API orqali email yuboradi.
+    Render free planda SMTP port 587 bloklangan, shuning uchun HTTPS API ishlatamiz.
+    Sozlash: settings.py'da BREVO_API_KEY mavjud bo'lishi kerak.
+    """
+    import json
+    import urllib.request
+    import urllib.error
+
+    api_key = getattr(settings, "BREVO_API_KEY", "")
+    if not api_key:
+        raise RuntimeError("BREVO_API_KEY sozlanmagan")
+
+    payload = {
+        "sender": {
+            "name": "SmartIsh",
+            "email": settings.DEFAULT_FROM_EMAIL,
+        },
+        "to": [{"email": email}],
+        "subject": subject,
+        "textContent": message,
+    }
+    data = json.dumps(payload).encode("utf-8")
+
+    req = urllib.request.Request(
+        "https://api.brevo.com/v3/smtp/email",
+        data=data,
+        headers={
+            "accept": "application/json",
+            "api-key": api_key,
+            "content-type": "application/json",
+        },
+        method="POST",
+    )
+
+    try:
+        with urllib.request.urlopen(req, timeout=15) as response:
+            response.read()  # consume
+    except urllib.error.HTTPError as e:
+        body = e.read().decode("utf-8", errors="replace")
+        raise RuntimeError(f"Brevo API xato ({e.code}): {body[:200]}")
+    except urllib.error.URLError as e:
+        raise RuntimeError(f"Brevo API ulanish xato: {e}")
+
+
 def _send_otp_email(email: str, code: str) -> None:
-    """OTP kodni emailga yuboradi. DEV rejimda konsolga chiqadi."""
-    subject = "Tasdiqlash kodi"
+    """OTP kodni emailga yuboradi.
+    - PROD (Render): BREVO_API_KEY mavjud → HTTPS API
+    - DEV (lokal): Django SMTP backend (yoki console)
+    """
+    subject = "Tasdiqlash kodi — SmartIsh"
     message = (
         f"Sizning tasdiqlash kodingiz: {code}\n\n"
         f"Kod {settings.OTP_CODE_LIFETIME_MINUTES} daqiqa ichida amal qiladi.\n"
-        f"Agar siz ushbu so'rovni yubormagan bo'lsangiz, ushbu xatni e'tiborsiz qoldiring."
+        f"Agar siz ushbu so'rovni yubormagan bo'lsangiz, ushbu xatni e'tiborsiz qoldiring.\n\n"
+        f"— SmartIsh AI platformasi"
     )
+
+    # PROD: Brevo HTTP API (port 443 — Render free planda ishlaydi)
+    if getattr(settings, "BREVO_API_KEY", ""):
+        _send_via_brevo_api(email, subject, message)
+        return
+
+    # DEV: Django default backend (console yoki SMTP)
     send_mail(
         subject=subject,
         message=message,

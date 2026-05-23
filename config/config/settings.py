@@ -389,6 +389,13 @@ CACHE_TTL_VACANCY_DETAIL = 180    # vakansiya detali — 3 daqiqa
 GEMINI_API_KEY = config("GEMINI_API_KEY", default="")
 
 # ──────────────────────────────────────────────
+# BREVO HTTP API (Render free planda SMTP bloklangan,
+# shuning uchun HTTPS API ishlatamiz)
+# https://app.brevo.com/settings/keys/api
+# ──────────────────────────────────────────────
+BREVO_API_KEY = config("BREVO_API_KEY", default="")
+
+# ──────────────────────────────────────────────
 # LOGGING
 # ──────────────────────────────────────────────
 LOGGING = {
