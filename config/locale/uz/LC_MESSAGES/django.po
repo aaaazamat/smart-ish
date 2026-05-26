@@ -1,0 +1,19 @@
+# Uzbek translations for Diplom_project (Job board) — source language.
+# Copyright (C) 2026
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: 1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-05-26 09:00+0500\n"
+"PO-Revision-Date: 2026-05-26 09:00+0500\n"
+"Last-Translator: Azamat Saribaev\n"
+"Language-Team: Uzbek\n"
+"Language: uz\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+# uz manba til. Empty msgstr — Django msgid'ni qaytaradi (fallback).
+# Lekin Django talab qiladi: agar fallback'da xato bo'lsa, bo'sh msgstr yetarli.

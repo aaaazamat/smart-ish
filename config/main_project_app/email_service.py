@@ -13,6 +13,7 @@ from typing import Optional
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
 from django.utils import timezone
+from django.utils.translation import gettext as _, get_language
 
 logger = logging.getLogger(__name__)
 
@@ -75,7 +76,7 @@ def _html_wrap(title: str, body_html: str, cta_text: str = None, cta_url: str = 
         """
 
     return f"""<!DOCTYPE html>
-<html lang="uz">
+<html lang="{get_language() or 'uz'}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -106,8 +107,8 @@ def _html_wrap(title: str, body_html: str, cta_text: str = None, cta_url: str = 
               {cta_html}
               <hr style="border: 0; border-top: 1px solid #E5E7EB; margin: 24px 0;">
               <p style="font-size: 12px; color: #9CA3AF; margin: 0;">
-                Ushbu xabar avtomatik yuborildi. Javob bermang.<br>
-                Agar siz emaillarni olishni xohlamasangiz, profil sozlamalaridan o'chiring.
+                {_("Ushbu xabar avtomatik yuborildi. Javob bermang.")}<br>
+                {_("Agar siz emaillarni olishni xohlamasangiz, profil sozlamalaridan o'chiring.")}
               </p>
             </td>
           </tr>
@@ -131,32 +132,43 @@ def send_application_received_email(application) -> bool:
 
     vacancy = application.vacancy
     resume = application.resume
-    candidate_name = f"{resume.last_name} {resume.first_name}".strip() or "Nomzod"
-    profession = vacancy.profession.name if vacancy.profession else "vakansiyangiz"
+    candidate_name = f"{resume.last_name} {resume.first_name}".strip() or _("Nomzod")
+    profession = vacancy.profession.name if vacancy.profession else _("vakansiyangiz")
     cover = (application.cover_letter or "").strip()
     cover_excerpt = (cover[:200] + "...") if len(cover) > 200 else cover
 
-    subject = f"Yangi ariza: {candidate_name} → {profession}"
+    # Tarjima qilingan label'lar (har til'da boshqacha kelsin)
+    L_HELLO = _("Salom!")
+    L_NEW_APP = _("\"%(profession)s\" vakansiyangizga yangi ariza keldi.") % {"profession": profession}
+    L_CANDIDATE = _("Nomzod")
+    L_PROFESSION = _("Kasb")
+    L_REGION = _("Hudud")
+    L_CAREER = _("Karyera darajasi")
+    L_COVER = _("Murojaat xati")
+    L_REVIEW = _("Ko'rib chiqish")
+    L_DASH = "—"
+
+    subject = _("Yangi ariza: %(name)s → %(profession)s") % {"name": candidate_name, "profession": profession}
 
     text_body = (
-        f"Salom!\n\n"
-        f"\"{profession}\" vakansiyangizga yangi ariza keldi.\n\n"
-        f"Nomzod: {candidate_name}\n"
-        f"Kasb: {resume.profession.name if resume.profession else '—'}\n"
-        f"Hudud: {resume.region.name if resume.region else '—'}\n"
-        f"Karyera darajasi: {resume.get_career_level_display()}\n"
+        f"{L_HELLO}\n\n"
+        f"{L_NEW_APP}\n\n"
+        f"{L_CANDIDATE}: {candidate_name}\n"
+        f"{L_PROFESSION}: {resume.profession.name if resume.profession else L_DASH}\n"
+        f"{L_REGION}: {resume.region.name if resume.region else L_DASH}\n"
+        f"{L_CAREER}: {resume.get_career_level_display()}\n"
     )
     if cover_excerpt:
-        text_body += f"\nMurojaat xati:\n{cover_excerpt}\n"
-    text_body += f"\nKo'rib chiqish: {SITE_URL}/employer/applications/{application.id}\n"
+        text_body += f"\n{L_COVER}:\n{cover_excerpt}\n"
+    text_body += f"\n{L_REVIEW}: {SITE_URL}/employer/applications/{application.id}\n"
 
     body_html = f"""
-      <p>\"<strong>{profession}</strong>\" vakansiyangizga yangi ariza keldi.</p>
+      <p>{L_NEW_APP}</p>
       <table cellpadding="6" cellspacing="0" border="0" style="margin: 12px 0; font-size: 14px;">
-        <tr><td style="color:#6B7280;">Nomzod:</td><td><strong>{candidate_name}</strong></td></tr>
-        <tr><td style="color:#6B7280;">Kasb:</td><td>{resume.profession.name if resume.profession else '—'}</td></tr>
-        <tr><td style="color:#6B7280;">Hudud:</td><td>{resume.region.name if resume.region else '—'}</td></tr>
-        <tr><td style="color:#6B7280;">Karyera darajasi:</td><td>{resume.get_career_level_display()}</td></tr>
+        <tr><td style="color:#6B7280;">{L_CANDIDATE}:</td><td><strong>{candidate_name}</strong></td></tr>
+        <tr><td style="color:#6B7280;">{L_PROFESSION}:</td><td>{resume.profession.name if resume.profession else L_DASH}</td></tr>
+        <tr><td style="color:#6B7280;">{L_REGION}:</td><td>{resume.region.name if resume.region else L_DASH}</td></tr>
+        <tr><td style="color:#6B7280;">{L_CAREER}:</td><td>{resume.get_career_level_display()}</td></tr>
       </table>
     """
     if cover_excerpt:
@@ -169,9 +181,9 @@ def send_application_received_email(application) -> bool:
         """
 
     html = _html_wrap(
-        title="Yangi ariza qabul qilindi",
+        title=_("Yangi ariza qabul qilindi"),
         body_html=body_html,
-        cta_text="Arizani ko'rish",
+        cta_text=_("Arizani ko'rish"),
         cta_url=f"{SITE_URL}/employer/applications/{application.id}",
     )
 
@@ -189,38 +201,51 @@ def send_invitation_received_email(invitation) -> bool:
         return False
 
     vacancy = invitation.vacancy
-    org_name = vacancy.organization.name if vacancy.organization else "Tashkilot"
-    profession = vacancy.profession.name if vacancy.profession else "vakansiya"
+    org_name = vacancy.organization.name if vacancy.organization else _("Tashkilot")
+    profession = vacancy.profession.name if vacancy.profession else _("vakansiya")
     note = (invitation.note or "").strip()
 
-    subject = f"Sizga taklif: {profession} ({org_name})"
+    # Tarjima label'lar
+    L_HELLO = _("Assalomu alaykum!")
+    L_INVITED = _("%(org)s sizni \"%(profession)s\" lavozimiga taklif qildi.") % {
+        "org": org_name, "profession": profession,
+    }
+    L_REGION = _("Hudud")
+    L_WORK_MODE = _("Ish rejimi")
+    L_SALARY = _("Maosh")
+    L_EMPLOYER_MSG = _("Ish beruvchi xabari")
+    L_VIEW_INV = _("Taklifni ko'rish")
+    L_SUM = _("so'm")
+    L_DASH = "—"
+
+    subject = _("Sizga taklif: %(profession)s (%(org)s)") % {"profession": profession, "org": org_name}
 
     text_body = (
-        f"Assalomu alaykum!\n\n"
-        f"{org_name} sizni \"{profession}\" lavozimiga taklif qildi.\n\n"
-        f"Hudud: {vacancy.region.name if vacancy.region else '—'}\n"
-        f"Ish rejimi: {vacancy.get_work_mode_display()}\n"
+        f"{L_HELLO}\n\n"
+        f"{L_INVITED}\n\n"
+        f"{L_REGION}: {vacancy.region.name if vacancy.region else L_DASH}\n"
+        f"{L_WORK_MODE}: {vacancy.get_work_mode_display()}\n"
     )
     if vacancy.salary_from:
-        salary_text = f"{vacancy.salary_from:,} so'm".replace(",", " ")
+        salary_text = f"{vacancy.salary_from:,} {L_SUM}".replace(",", " ")
         if vacancy.salary_to:
-            salary_text += f" - {vacancy.salary_to:,} so'm".replace(",", " ")
-        text_body += f"Maosh: {salary_text}\n"
+            salary_text += f" - {vacancy.salary_to:,} {L_SUM}".replace(",", " ")
+        text_body += f"{L_SALARY}: {salary_text}\n"
     if note:
-        text_body += f"\nIsh beruvchi xabari:\n{note}\n"
-    text_body += f"\nTaklifni ko'rish: {SITE_URL}/applications\n"
+        text_body += f"\n{L_EMPLOYER_MSG}:\n{note}\n"
+    text_body += f"\n{L_VIEW_INV}: {SITE_URL}/applications\n"
 
     body_html = f"""
-      <p><strong>{org_name}</strong> sizni \"<strong>{profession}</strong>\" lavozimiga taklif qildi.</p>
+      <p>{L_INVITED}</p>
       <table cellpadding="6" cellspacing="0" border="0" style="margin: 12px 0; font-size: 14px;">
-        <tr><td style="color:#6B7280;">Hudud:</td><td>{vacancy.region.name if vacancy.region else '—'}</td></tr>
-        <tr><td style="color:#6B7280;">Ish rejimi:</td><td>{vacancy.get_work_mode_display()}</td></tr>
+        <tr><td style="color:#6B7280;">{L_REGION}:</td><td>{vacancy.region.name if vacancy.region else L_DASH}</td></tr>
+        <tr><td style="color:#6B7280;">{L_WORK_MODE}:</td><td>{vacancy.get_work_mode_display()}</td></tr>
     """
     if vacancy.salary_from:
         salary_text = f"{vacancy.salary_from:,}".replace(",", " ")
         if vacancy.salary_to:
             salary_text += f" - {vacancy.salary_to:,}".replace(",", " ")
-        body_html += f"<tr><td style='color:#6B7280;'>Maosh:</td><td>{salary_text} so'm</td></tr>"
+        body_html += f"<tr><td style='color:#6B7280;'>{L_SALARY}:</td><td>{salary_text} {L_SUM}</td></tr>"
     body_html += "</table>"
 
     if note:
@@ -228,15 +253,15 @@ def send_invitation_received_email(invitation) -> bool:
           <div style="background: #F0F9FA; border-left: 3px solid #149AAB;
                padding: 12px 16px; margin-top: 16px; border-radius: 4px;
                font-size: 13px; color: #374151;">
-            <strong>Ish beruvchi xabari:</strong><br>
+            <strong>{L_EMPLOYER_MSG}:</strong><br>
             {note}
           </div>
         """
 
     html = _html_wrap(
-        title="Sizga taklif keldi",
+        title=_("Sizga taklif keldi"),
         body_html=body_html,
-        cta_text="Taklifni ko'rish",
+        cta_text=_("Taklifni ko'rish"),
         cta_url=f"{SITE_URL}/applications",
     )
 
@@ -254,10 +279,19 @@ def send_application_status_changed_email(application) -> bool:
         return False
 
     vacancy = application.vacancy
-    org_name = vacancy.organization.name if vacancy.organization else "Tashkilot"
-    profession = vacancy.profession.name if vacancy.profession else "vakansiya"
+    org_name = vacancy.organization.name if vacancy.organization else _("Tashkilot")
+    profession = vacancy.profession.name if vacancy.profession else _("vakansiya")
     status_display = application.get_status_display()
     note = (application.note or "").strip()
+
+    # Tarjima label'lar
+    L_HELLO = _("Assalomu alaykum!")
+    L_STATUS_CHANGED = _("%(org)s (\"%(profession)s\") sizning arizangizning holatini o'zgartirdi.") % {
+        "org": org_name, "profession": profession,
+    }
+    L_NOTE = _("Izoh")
+    L_EMPLOYER_NOTE = _("Ish beruvchi izohi")
+    L_VIEW_APPS = _("Arizalarni ko'rish")
 
     # Status emoji va rangi (HTML emailda)
     status_meta = {
@@ -267,21 +301,21 @@ def send_application_status_changed_email(application) -> bool:
         "hired": ("🎉", "#10B981", "ishga qabul qilindi"),
         "rejected": ("❌", "#EF4444", "rad etildi"),
     }
-    emoji, color, _ = status_meta.get(application.status, ("", "#6B7280", ""))
+    # Eslatma: `_` o'zgaruvchisi gettext alias bilan konflikt qilmasligi uchun nom o'zgartirildi
+    emoji, color, _status_text = status_meta.get(application.status, ("", "#6B7280", ""))
 
-    subject = f"Ariza holati: {status_display} — {profession}"
+    subject = _("Ariza holati: %(status)s — %(profession)s") % {"status": status_display, "profession": profession}
 
     text_body = (
-        f"Assalomu alaykum!\n\n"
-        f"{org_name} ({profession}) sizning arizangizning holatini "
-        f"o'zgartirdi: {status_display}\n"
+        f"{L_HELLO}\n\n"
+        f"{L_STATUS_CHANGED} {status_display}\n"
     )
     if note:
-        text_body += f"\nIzoh:\n{note}\n"
-    text_body += f"\nArizalarni ko'rish: {SITE_URL}/applications\n"
+        text_body += f"\n{L_NOTE}:\n{note}\n"
+    text_body += f"\n{L_VIEW_APPS}: {SITE_URL}/applications\n"
 
     body_html = f"""
-      <p><strong>{org_name}</strong> (\"{profession}\") sizning arizangizning holatini o'zgartirdi.</p>
+      <p>{L_STATUS_CHANGED}</p>
       <div style="display: inline-block; padding: 8px 16px; margin: 12px 0;
            background: {color}15; color: {color}; border-radius: 20px;
            font-weight: 600; font-size: 14px;">
@@ -293,15 +327,15 @@ def send_application_status_changed_email(application) -> bool:
           <div style="background: #F9FAFB; border-left: 3px solid #6B7280;
                padding: 12px 16px; margin-top: 16px; border-radius: 4px;
                font-size: 13px; color: #374151;">
-            <strong>Ish beruvchi izohi:</strong><br>
+            <strong>{L_EMPLOYER_NOTE}:</strong><br>
             {note}
           </div>
         """
 
     html = _html_wrap(
-        title="Ariza holati o'zgardi",
+        title=_("Ariza holati o'zgardi"),
         body_html=body_html,
-        cta_text="Arizalarni ko'rish",
+        cta_text=_("Arizalarni ko'rish"),
         cta_url=f"{SITE_URL}/applications",
     )
 

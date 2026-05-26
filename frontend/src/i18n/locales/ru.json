@@ -4,10 +4,14 @@
     "filter": "Фильтр",
     "clear": "Очистить",
     "save": "Сохранить",
+    "saving": "Сохранение...",
     "cancel": "Отмена",
     "delete": "Удалить",
     "edit": "Редактировать",
     "back": "Назад",
+    "close": "Закрыть",
+    "show": "Показать",
+    "change_language": "Сменить язык",
     "loading": "Загрузка...",
     "no_data": "Данные не найдены",
     "error": "Произошла ошибка",
@@ -34,24 +38,39 @@
   },
   "auth": {
     "login_title": "Вход в систему",
+    "login_subtitle": "Введите email и пароль",
+    "login_button": "Войти",
+    "signing_in": "Вход...",
     "register_title": "Регистрация",
+    "register_subtitle": "На вашу почту отправим 6-значный код подтверждения",
+    "as_job_seeker": "Как соискатель",
+    "as_employer": "Как работодатель",
+    "code_sent_to": "Код отправлен на {{email}} (виден в консоли Django)",
+    "code_sent_short": "Код отправлен на {{email}}",
     "phone_number": "Номер телефона",
     "email": "Email",
     "password": "Пароль",
+    "password_placeholder": "Минимум 6 символов",
     "confirm_password": "Подтвердите пароль",
+    "password_again": "Ещё раз",
     "old_password": "Старый пароль",
     "new_password": "Новый пароль",
     "send_code": "Отправить код",
+    "sending": "Отправка...",
     "verification_code": "Код подтверждения",
     "forgot_password": "Забыли пароль?",
     "no_account": "Нет аккаунта?",
     "have_account": "Уже есть аккаунт?",
+    "register_cta": "Зарегистрироваться",
+    "login_cta": "Войти",
     "change_password": "Сменить пароль",
     "password_updated": "Пароль успешно обновлён",
     "logout_confirm": "Выйти из системы?",
     "job_seeker": "Соискатель",
     "employer": "Работодатель",
-    "admin": "Администратор"
+    "admin": "Администратор",
+    "organization": "Организация",
+    "select_organization": "Выберите организацию"
   },
   "vacancy": {
     "title_one": "вакансия",
@@ -70,6 +89,22 @@
     "saved": "Сохранено",
     "views": "Просмотры",
     "applications_count": "Отклики"
+  },
+  "vacancy_card": {
+    "like_aria": "Добавить в избранное",
+    "id_label": "ID",
+    "posted": "Опубликовано"
+  },
+  "filter": {
+    "region": "Регион",
+    "all_regions": "Все регионы",
+    "district": "Район / Город",
+    "all_districts": "Все районы",
+    "select_region_first": "Сначала выберите регион",
+    "profession": "Должность или профессия",
+    "all_professions": "Все профессии",
+    "industry": "Отрасли",
+    "all": "Все"
   },
   "resume": {
     "title_one": "резюме",
@@ -108,11 +143,19 @@
     "mark_read": "Отметить как прочитанное",
     "empty": "Нет уведомлений"
   },
+  "mobile_menu": {
+    "open": "Меню",
+    "language": "Язык"
+  },
   "footer": {
-    "about": "О нас",
-    "contact": "Связаться",
-    "terms": "Условия использования",
+    "tagline": "Современная платформа для поиска работы с помощью искусственного интеллекта, связывающая работодателей с кандидатами.",
+    "contact_us": "Свяжитесь с нами",
+    "follow_social": "Следите за нами в соцсетях",
+    "moderator_login": "Войти как модератор",
+    "copyright": "© {{year}} SmartIsh. Все права защищены.",
     "privacy": "Политика конфиденциальности",
-    "copyright": "© 2026 OSON ISH. Все права защищены."
+    "terms": "Пользовательское соглашение",
+    "about": "О нас",
+    "contact": "Связаться"
   }
 }

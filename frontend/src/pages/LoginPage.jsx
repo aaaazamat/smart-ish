@@ -1,5 +1,6 @@
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
+import { useTranslation } from 'react-i18next'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { AlertCircle, Sparkles, Mail } from 'lucide-react'
 import { loginSchema } from '@/lib/schemas'
@@ -11,6 +12,7 @@ import FormField from '@/components/ui/FormField'
 import Logo from '@/components/ui/Logo'
 
 function LoginPage() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const login = useLogin()
@@ -92,10 +94,10 @@ function LoginPage() {
           <div className="animate-fade-in-up">
             <div className="flex items-center gap-2 mb-2">
               <Sparkles className="w-5 h-5 text-brand-500 animate-twinkle" />
-              <h1 className="text-2xl font-bold text-gray-900">Tizimga kirish</h1>
+              <h1 className="text-2xl font-bold text-gray-900">{t('auth.login_title')}</h1>
             </div>
             <p className="text-sm text-gray-500 mb-6">
-              Email va parolingizni kiriting
+              {t('auth.login_subtitle')}
             </p>
           </div>
 
@@ -108,7 +110,7 @@ function LoginPage() {
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="animate-fade-in-up stagger-2" style={{ animationFillMode: 'backwards' }}>
-              <FormField label="Email" error={errors.email?.message}>
+              <FormField label={t('auth.email')} error={errors.email?.message}>
                 <Input
                   type="email"
                   autoComplete="email"
@@ -120,7 +122,7 @@ function LoginPage() {
             </div>
 
             <div className="animate-fade-in-up stagger-3" style={{ animationFillMode: 'backwards' }}>
-              <FormField label="Parol" error={errors.password?.message}>
+              <FormField label={t('auth.password')} error={errors.password?.message}>
                 <Input
                   type="password"
                   autoComplete="current-password"
@@ -140,18 +142,18 @@ function LoginPage() {
                 {login.isPending && (
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                 )}
-                {login.isPending ? 'Kirilmoqda...' : 'Kirish'}
+                {login.isPending ? t('auth.signing_in') : t('auth.login_button')}
               </button>
             </div>
           </form>
 
           <p className="mt-6 text-sm text-gray-600 text-center animate-fade-in-up stagger-5" style={{ animationFillMode: 'backwards' }}>
-            Akkauntingiz yo'qmi?{' '}
+            {t('auth.no_account')}{' '}
             <Link
               to="/register"
               className="smartish-gradient-text font-bold hover:underline"
             >
-              Ro'yxatdan o'ting
+              {t('auth.register_cta')}
             </Link>
           </p>
         </div>

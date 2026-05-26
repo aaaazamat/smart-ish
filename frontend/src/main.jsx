@@ -5,7 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { SkeletonTheme } from 'react-loading-skeleton'
 import 'react-loading-skeleton/dist/skeleton.css'
 import { ToastProvider } from '@/components/ui/Toast'
-import '@/i18n'  // i18n init (yon ta'sirlari uchun importlash kifoya)
+import i18n from '@/i18n'  // i18n init (yon ta'sirlari uchun importlash kifoya)
 import './index.css'
 import App from './App.jsx'
 
@@ -17,6 +17,12 @@ const queryClient = new QueryClient({
       refetchOnWindowFocus: false,
     },
   },
+})
+
+// Til o'zgartirilganda — TanStack Query cache'ni invalidate qilish
+// Backend Accept-Language asosida boshqa tarjima qaytaradi, demak data qayta keladi.
+i18n.on('languageChanged', () => {
+  queryClient.invalidateQueries()
 })
 
 createRoot(document.getElementById('root')).render(

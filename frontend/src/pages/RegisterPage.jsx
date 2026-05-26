@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
+import { useTranslation } from 'react-i18next'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useQuery } from '@tanstack/react-query'
 import { AlertCircle, ArrowLeft, CheckCircle2, User, Building2 } from 'lucide-react'
@@ -20,20 +21,21 @@ import FormField from '@/components/ui/FormField'
 import Logo from '@/components/ui/Logo'
 
 function RoleTabs({ value, onChange }) {
+  const { t } = useTranslation()
   const tabs = [
-    { value: 'job_seeker', label: 'Ish izlovchi', icon: User },
-    { value: 'employer', label: 'Ish beruvchi', icon: Building2 },
+    { value: 'job_seeker', label: t('auth.job_seeker'), icon: User },
+    { value: 'employer', label: t('auth.employer'), icon: Building2 },
   ]
   return (
     <div className="grid grid-cols-2 gap-2 mb-6 p-1 bg-gray-100 rounded-xl">
-      {tabs.map((t) => {
-        const Icon = t.icon
-        const active = value === t.value
+      {tabs.map((tab) => {
+        const Icon = tab.icon
+        const active = value === tab.value
         return (
           <button
-            key={t.value}
+            key={tab.value}
             type="button"
-            onClick={() => onChange(t.value)}
+            onClick={() => onChange(tab.value)}
             className={cn(
               'flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-all duration-300',
               active
@@ -42,7 +44,7 @@ function RoleTabs({ value, onChange }) {
             )}
           >
             <Icon className="w-4 h-4" />
-            {t.label}
+            {tab.label}
           </button>
         )
       })}
@@ -51,6 +53,7 @@ function RoleTabs({ value, onChange }) {
 }
 
 function StepEmail({ onSent }) {
+  const { t } = useTranslation()
   const sendOtp = useSendOtp()
 
   const {
@@ -71,9 +74,9 @@ function StepEmail({ onSent }) {
 
   return (
     <>
-      <h1 className="text-2xl font-bold text-gray-900 mb-2">Ro'yxatdan o'tish</h1>
+      <h1 className="text-2xl font-bold text-gray-900 mb-2">{t('auth.register_title')}</h1>
       <p className="text-sm text-gray-500 mb-6">
-        Emailingizga 6 xonali tasdiqlash kodi yuboramiz
+        {t('auth.register_subtitle')}
       </p>
 
       {formError && (
@@ -84,7 +87,7 @@ function StepEmail({ onSent }) {
       )}
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        <FormField label="Email" error={errors.email?.message}>
+        <FormField label={t('auth.email')} error={errors.email?.message}>
           <Input
             type="email"
             autoComplete="email"
@@ -102,7 +105,7 @@ function StepEmail({ onSent }) {
           {sendOtp.isPending && (
             <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
           )}
-          {sendOtp.isPending ? 'Yuborilmoqda...' : 'Kod yuborish'}
+          {sendOtp.isPending ? t('auth.sending') : t('auth.send_code')}
         </button>
       </form>
     </>
@@ -110,6 +113,7 @@ function StepEmail({ onSent }) {
 }
 
 function StepJobSeeker({ email, onBack }) {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const registerMutation = useRegisterJobSeeker()
 
@@ -137,12 +141,12 @@ function StepJobSeeker({ email, onBack }) {
   return (
     <>
       <button type="button" onClick={onBack} className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 mb-4">
-        <ArrowLeft className="w-4 h-4" /> Orqaga
+        <ArrowLeft className="w-4 h-4" /> {t('common.back')}
       </button>
-      <h1 className="text-2xl font-bold text-gray-900 mb-2">Ish izlovchi sifatida</h1>
+      <h1 className="text-2xl font-bold text-gray-900 mb-2">{t('auth.as_job_seeker')}</h1>
       <div className="mb-6 bg-green-50 border border-green-200 text-green-700 p-3 rounded-lg flex items-start gap-2 text-sm">
         <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
-        <span>Kod <strong>{email}</strong> manziliga yuborildi (Django konsolida ko'rinadi)</span>
+        <span>{t('auth.code_sent_to', { email })}</span>
       </div>
 
       {formError && (
@@ -153,20 +157,20 @@ function StepJobSeeker({ email, onBack }) {
       )}
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        <FormField label="Email" error={errors.email?.message}>
+        <FormField label={t('auth.email')} error={errors.email?.message}>
           <Input type="email" disabled error={!!errors.email} {...register('email')} />
         </FormField>
-        <FormField label="Tasdiqlash kodi" error={errors.code?.message}>
+        <FormField label={t('auth.verification_code')} error={errors.code?.message}>
           <Input type="text" inputMode="numeric" maxLength={6} placeholder="123456" error={!!errors.code} {...register('code')} />
         </FormField>
-        <FormField label="Telefon raqami" error={errors.phone_number?.message}>
+        <FormField label={t('auth.phone_number')} error={errors.phone_number?.message}>
           <Input type="tel" autoComplete="tel" placeholder="+998901234567" error={!!errors.phone_number} {...register('phone_number')} />
         </FormField>
-        <FormField label="Parol" error={errors.password?.message}>
-          <Input type="password" autoComplete="new-password" placeholder="Kamida 6 ta belgi" error={!!errors.password} {...register('password')} />
+        <FormField label={t('auth.password')} error={errors.password?.message}>
+          <Input type="password" autoComplete="new-password" placeholder={t('auth.password_placeholder')} error={!!errors.password} {...register('password')} />
         </FormField>
-        <FormField label="Parolni takrorlang" error={errors.password_confirm?.message}>
-          <Input type="password" autoComplete="new-password" placeholder="Yana bir bor" error={!!errors.password_confirm} {...register('password_confirm')} />
+        <FormField label={t('auth.confirm_password')} error={errors.password_confirm?.message}>
+          <Input type="password" autoComplete="new-password" placeholder={t('auth.password_again')} error={!!errors.password_confirm} {...register('password_confirm')} />
         </FormField>
         <button
           type="submit"
@@ -176,7 +180,7 @@ function StepJobSeeker({ email, onBack }) {
           {registerMutation.isPending && (
             <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
           )}
-          {registerMutation.isPending ? "Saqlanmoqda..." : "Ro'yxatdan o'tish"}
+          {registerMutation.isPending ? t('common.saving') : t('auth.register_title')}
         </button>
       </form>
     </>
@@ -184,6 +188,7 @@ function StepJobSeeker({ email, onBack }) {
 }
 
 function StepEmployer({ email, onBack }) {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const registerMutation = useRegisterEmployer()
 
@@ -219,12 +224,12 @@ function StepEmployer({ email, onBack }) {
   return (
     <>
       <button type="button" onClick={onBack} className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 mb-4">
-        <ArrowLeft className="w-4 h-4" /> Orqaga
+        <ArrowLeft className="w-4 h-4" /> {t('common.back')}
       </button>
-      <h1 className="text-2xl font-bold text-gray-900 mb-2">Ish beruvchi sifatida</h1>
+      <h1 className="text-2xl font-bold text-gray-900 mb-2">{t('auth.as_employer')}</h1>
       <div className="mb-6 bg-green-50 border border-green-200 text-green-700 p-3 rounded-lg flex items-start gap-2 text-sm">
         <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
-        <span>Kod <strong>{email}</strong> manziliga yuborildi</span>
+        <span>{t('auth.code_sent_short', { email })}</span>
       </div>
 
       {formError && (
@@ -235,28 +240,28 @@ function StepEmployer({ email, onBack }) {
       )}
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        <FormField label="Email" error={errors.email?.message}>
+        <FormField label={t('auth.email')} error={errors.email?.message}>
           <Input type="email" disabled error={!!errors.email} {...register('email')} />
         </FormField>
-        <FormField label="Tasdiqlash kodi" error={errors.code?.message}>
+        <FormField label={t('auth.verification_code')} error={errors.code?.message}>
           <Input type="text" inputMode="numeric" maxLength={6} placeholder="123456" error={!!errors.code} {...register('code')} />
         </FormField>
-        <FormField label="Telefon raqami" error={errors.phone_number?.message}>
+        <FormField label={t('auth.phone_number')} error={errors.phone_number?.message}>
           <Input type="tel" placeholder="+998901234567" error={!!errors.phone_number} {...register('phone_number')} />
         </FormField>
-        <FormField label="Tashkilot" error={errors.organization_id?.message}>
+        <FormField label={t('auth.organization')} error={errors.organization_id?.message}>
           <Select error={!!errors.organization_id} {...register('organization_id')}>
-            <option value="">Tashkilotni tanlang</option>
+            <option value="">{t('auth.select_organization')}</option>
             {orgList.map((o) => (
               <option key={o.id} value={o.id}>{o.name}</option>
             ))}
           </Select>
         </FormField>
-        <FormField label="Parol" error={errors.password?.message}>
-          <Input type="password" autoComplete="new-password" placeholder="Kamida 6 ta belgi" error={!!errors.password} {...register('password')} />
+        <FormField label={t('auth.password')} error={errors.password?.message}>
+          <Input type="password" autoComplete="new-password" placeholder={t('auth.password_placeholder')} error={!!errors.password} {...register('password')} />
         </FormField>
-        <FormField label="Parolni takrorlang" error={errors.password_confirm?.message}>
-          <Input type="password" autoComplete="new-password" placeholder="Yana bir bor" error={!!errors.password_confirm} {...register('password_confirm')} />
+        <FormField label={t('auth.confirm_password')} error={errors.password_confirm?.message}>
+          <Input type="password" autoComplete="new-password" placeholder={t('auth.password_again')} error={!!errors.password_confirm} {...register('password_confirm')} />
         </FormField>
         <button
           type="submit"
@@ -266,7 +271,7 @@ function StepEmployer({ email, onBack }) {
           {registerMutation.isPending && (
             <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
           )}
-          {registerMutation.isPending ? "Saqlanmoqda..." : "Ro'yxatdan o'tish"}
+          {registerMutation.isPending ? t('common.saving') : t('auth.register_title')}
         </button>
       </form>
     </>
@@ -274,6 +279,7 @@ function StepEmployer({ email, onBack }) {
 }
 
 function RegisterPage() {
+  const { t } = useTranslation()
   const [role, setRole] = useState('job_seeker')
   const [email, setEmail] = useState(null)
 
@@ -339,9 +345,9 @@ function RegisterPage() {
           </div>
 
           <p className="mt-6 text-sm text-gray-600 text-center">
-            Allaqachon akkauntingiz bormi?{' '}
+            {t('auth.have_account')}{' '}
             <Link to="/login" className="smartish-gradient-text font-bold hover:underline">
-              Tizimga kiring
+              {t('auth.login_cta')}
             </Link>
           </p>
         </div>

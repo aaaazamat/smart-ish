@@ -1,8 +1,12 @@
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { Phone, Mail, Send, Globe, Camera, Video } from 'lucide-react'
 import Logo from '@/components/ui/Logo'
 
 function Footer() {
+  const { t } = useTranslation()
+  const year = new Date().getFullYear()
+
   return (
     <footer className="bg-brand-950 text-white mt-12 sm:mt-16">
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-8 sm:py-12">
@@ -11,15 +15,14 @@ function Footer() {
           <div>
             <Logo invert />
             <p className="text-sm text-brand-200 mt-4 max-w-xs">
-              Sun'iy intellekt yordamida ish izlash va ish beruvchilarni nomzodlar
-              bilan bog'lovchi zamonaviy platforma.
+              {t('footer.tagline')}
             </p>
           </div>
 
           {/* Contacts */}
           <div>
             <h3 className="text-sm font-semibold text-white mb-4">
-              Biz bilan bog'laning
+              {t('footer.contact_us')}
             </h3>
             <ul className="space-y-2 text-sm text-brand-200">
               <li className="flex items-center gap-2">
@@ -46,7 +49,7 @@ function Footer() {
           {/* Social */}
           <div>
             <h3 className="text-sm font-semibold text-white mb-4">
-              Ijtimoiy tarmoqlarda kuzating
+              {t('footer.follow_social')}
             </h3>
             <div className="flex items-center gap-2">
               {[
@@ -72,16 +75,16 @@ function Footer() {
               to="/login"
               className="mt-5 inline-block px-4 py-2 bg-white/10 hover:bg-white/20 text-sm rounded-lg transition"
             >
-              Moderator sifatida kirish
+              {t('footer.moderator_login')}
             </Link>
           </div>
         </div>
 
         <div className="mt-10 pt-6 border-t border-white/10 flex flex-col sm:flex-row justify-between gap-3 text-xs text-brand-300">
-          <div>© {new Date().getFullYear()} SmartIsh. Barcha huquqlar himoyalangan.</div>
+          <div>{t('footer.copyright', { year })}</div>
           <div className="flex gap-4">
-            <a href="#" className="hover:text-white transition">Maxfiylik siyosati</a>
-            <a href="#" className="hover:text-white transition">Foydalanuvchi kelishuvi</a>
+            <a href="#" className="hover:text-white transition">{t('footer.privacy')}</a>
+            <a href="#" className="hover:text-white transition">{t('footer.terms')}</a>
           </div>
         </div>
       </div>

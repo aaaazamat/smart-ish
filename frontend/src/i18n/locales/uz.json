@@ -4,10 +4,14 @@
     "filter": "Filtr",
     "clear": "Tozalash",
     "save": "Saqlash",
+    "saving": "Saqlanmoqda...",
     "cancel": "Bekor qilish",
     "delete": "O'chirish",
     "edit": "Tahrirlash",
     "back": "Orqaga",
+    "close": "Yopish",
+    "show": "Ko'rsatish",
+    "change_language": "Tilni o'zgartirish",
     "loading": "Yuklanmoqda...",
     "no_data": "Ma'lumot topilmadi",
     "error": "Xatolik yuz berdi",
@@ -34,24 +38,39 @@
   },
   "auth": {
     "login_title": "Tizimga kirish",
+    "login_subtitle": "Email va parolingizni kiriting",
+    "login_button": "Kirish",
+    "signing_in": "Kirilmoqda...",
     "register_title": "Ro'yxatdan o'tish",
+    "register_subtitle": "Emailingizga 6 xonali tasdiqlash kodi yuboramiz",
+    "as_job_seeker": "Ish izlovchi sifatida",
+    "as_employer": "Ish beruvchi sifatida",
+    "code_sent_to": "Kod {{email}} manziliga yuborildi (Django konsolida ko'rinadi)",
+    "code_sent_short": "Kod {{email}} manziliga yuborildi",
     "phone_number": "Telefon raqam",
     "email": "Email",
     "password": "Parol",
+    "password_placeholder": "Kamida 6 ta belgi",
     "confirm_password": "Parolni tasdiqlang",
+    "password_again": "Yana bir bor",
     "old_password": "Eski parol",
     "new_password": "Yangi parol",
     "send_code": "Kod yuborish",
+    "sending": "Yuborilmoqda...",
     "verification_code": "Tasdiqlash kodi",
     "forgot_password": "Parolni unutdingizmi?",
-    "no_account": "Hisobingiz yo'qmi?",
-    "have_account": "Hisobingiz bormi?",
+    "no_account": "Akkauntingiz yo'qmi?",
+    "have_account": "Allaqachon akkauntingiz bormi?",
+    "register_cta": "Ro'yxatdan o'ting",
+    "login_cta": "Tizimga kiring",
     "change_password": "Parolni o'zgartirish",
     "password_updated": "Parol muvaffaqiyatli yangilandi",
     "logout_confirm": "Tizimdan chiqishni xohlaysizmi?",
     "job_seeker": "Ish izlovchi",
     "employer": "Ish beruvchi",
-    "admin": "Administrator"
+    "admin": "Administrator",
+    "organization": "Tashkilot",
+    "select_organization": "Tashkilotni tanlang"
   },
   "vacancy": {
     "title_one": "vakansiya",
@@ -70,6 +89,22 @@
     "saved": "Saqlangan",
     "views": "Ko'rishlar",
     "applications_count": "Arizalar"
+  },
+  "vacancy_card": {
+    "like_aria": "Sevimlilarga qo'shish",
+    "id_label": "ID",
+    "posted": "E'lon qilingan"
+  },
+  "filter": {
+    "region": "Hudud",
+    "all_regions": "Barcha hududlar",
+    "district": "Tuman / Shahar",
+    "all_districts": "Barcha tumanlar",
+    "select_region_first": "Avval hududni tanlang",
+    "profession": "Lavozim yoki kasb",
+    "all_professions": "Barcha kasblar",
+    "industry": "Sohalar",
+    "all": "Barchasi"
   },
   "resume": {
     "title_one": "rezyume",
@@ -108,11 +143,19 @@
     "mark_read": "O'qildi qilish",
     "empty": "Hech qanday bildirishnoma yo'q"
   },
+  "mobile_menu": {
+    "open": "Menyu",
+    "language": "Til"
+  },
   "footer": {
-    "about": "Biz haqimizda",
-    "contact": "Bog'lanish",
-    "terms": "Foydalanish shartlari",
+    "tagline": "Sun'iy intellekt yordamida ish izlash va ish beruvchilarni nomzodlar bilan bog'lovchi zamonaviy platforma.",
+    "contact_us": "Biz bilan bog'laning",
+    "follow_social": "Ijtimoiy tarmoqlarda kuzating",
+    "moderator_login": "Moderator sifatida kirish",
+    "copyright": "© {{year}} SmartIsh. Barcha huquqlar himoyalangan.",
     "privacy": "Maxfiylik siyosati",
-    "copyright": "© 2026 OSON ISH. Barcha huquqlar himoyalangan."
+    "terms": "Foydalanuvchi kelishuvi",
+    "about": "Biz haqimizda",
+    "contact": "Bog'lanish"
   }
 }

@@ -1,0 +1,436 @@
+# Qaraqalpaq (Latin) translations for Diplom_project (Job board).
+# Copyright (C) 2026
+# This file is distributed under the same license as the PACKAGE package.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: 1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-05-26 09:00+0500\n"
+"PO-Revision-Date: 2026-05-26 09:00+0500\n"
+"Last-Translator: Azamat Saribaev\n"
+"Language-Team: Qaraqalpaq\n"
+"Language: qaa\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+# ─── settings.py LANGUAGES ───
+msgid "O'zbek"
+msgstr "Ózbek"
+
+msgid "Русский"
+msgstr "Rus tili"
+
+msgid "Qaraqalpaqsha"
+msgstr "Qaraqalpaqsha"
+
+# ─── models.py verbose_name'lar ───
+msgid "Viloyat/Hudud"
+msgstr "Wálayat/Aymaq"
+
+msgid "Viloyatlar/Hududlar"
+msgstr "Wálayatlar/Aymaqlar"
+
+msgid "Tuman/Shahar"
+msgstr "Rayon/Qala"
+
+msgid "Tuman/Shaharlar"
+msgstr "Rayonlar/Qalalar"
+
+msgid "Tashkilot"
+msgstr "Shólkem"
+
+msgid "Tashkilotlar"
+msgstr "Shólkemler"
+
+msgid "Foydalanuvchi"
+msgstr "Paydalanıwshı"
+
+msgid "Foydalanuvchilar"
+msgstr "Paydalanıwshılar"
+
+msgid "Kasb/Lavozim"
+msgstr "Kásip/Lawazım"
+
+msgid "Kasblar/Lavozimlar"
+msgstr "Kásipler/Lawazımlar"
+
+msgid "Ko'nikma"
+msgstr "Kónlikpe"
+
+msgid "Ko'nikmalar"
+msgstr "Kónlikpeler"
+
+msgid "O'quv muassasasi"
+msgstr "Oqıw mákemesi"
+
+msgid "O'quv muassasalari"
+msgstr "Oqıw mákemeleri"
+
+msgid "Yo'nalish"
+msgstr "Baǵdar"
+
+msgid "Yo'nalishlar"
+msgstr "Baǵdarlar"
+
+msgid "Soha"
+msgstr "Taraw"
+
+msgid "Sohalar"
+msgstr "Tarawlar"
+
+msgid "Rezyume"
+msgstr "Rezyume"
+
+msgid "Rezyumelar"
+msgstr "Rezyumeler"
+
+msgid "Rezyume tili"
+msgstr "Rezyume tili"
+
+msgid "Rezyume tillari"
+msgstr "Rezyume tilleri"
+
+msgid "Ish tajribasi"
+msgstr "Jumıs tájiriybesi"
+
+msgid "Ish tajribalari"
+msgstr "Jumıs tájiriybeleri"
+
+msgid "Ta'lim"
+msgstr "Tálim"
+
+msgid "Ta'limlar"
+msgstr "Tálimler"
+
+msgid "Sertifikat"
+msgstr "Sertifikat"
+
+msgid "Sertifikatlar"
+msgstr "Sertifikatlar"
+
+msgid "Vakansiya"
+msgstr "Wakansiya"
+
+msgid "Vakansiyalar"
+msgstr "Wakansiyalar"
+
+msgid "Vakansiya til talabi"
+msgstr "Wakansiya til talabı"
+
+msgid "Vakansiya til talablari"
+msgstr "Wakansiya til talapları"
+
+msgid "Saqlangan vakansiya"
+msgstr "Saqlanǵan wakansiya"
+
+msgid "Saqlangan vakansiyalar"
+msgstr "Saqlanǵan wakansiyalar"
+
+msgid "Ariza/Taklif"
+msgstr "Arza/Usınıs"
+
+msgid "Arizalar/Takliflar"
+msgstr "Arzalar/Usınıslar"
+
+msgid "OTP kod"
+msgstr "OTP kod"
+
+msgid "OTP kodlar"
+msgstr "OTP kodlar"
+
+msgid "Rezyume ko'rishi"
+msgstr "Rezyume kóriwi"
+
+msgid "Rezyume ko'rishlari"
+msgstr "Rezyume kóriwleri"
+
+msgid "Bildirishnoma"
+msgstr "Xabarnama"
+
+msgid "Bildirishnomalar"
+msgstr "Xabarnamalar"
+
+msgid "Shikoyat"
+msgstr "Shaǵım"
+
+msgid "Shikoyatlar"
+msgstr "Shaǵımlar"
+
+# ─── Role choices ───
+msgid "Ish izlovchi"
+msgstr "Jumıs izlewshi"
+
+msgid "Ish beruvchi"
+msgstr "Jumıs beriwshi"
+
+msgid "Administrator"
+msgstr "Administrator"
+
+# ─── Help texts ───
+msgid "Profil rasmi (kvadrat shaklida tavsiya etiladi)"
+msgstr "Profil súwreti (kvadrat formada usınıs etiledi)"
+
+msgid "Ish beruvchi izohi"
+msgstr "Jumıs beriwshi izahatı"
+
+msgid "Bildirishnoma yuboriladigan foydalanuvchi"
+msgstr "Xabarnama jiberiletuǵın paydalanıwshı"
+
+msgid "Shikoyat yuborgan foydalanuvchi"
+msgstr "Shaǵım jibergen paydalanıwshı"
+
+msgid "Shikoyat qilinayotgan ob'ekt ID si"
+msgstr "Shaǵım qılınıp atırǵan obyekt ID si"
+
+msgid "Qo'shimcha tushuntirish"
+msgstr "Qosımsha túsindirme"
+
+msgid "Admin javobi/qarori"
+msgstr "Admin juwabı/qararı"
+
+# ─── Validation messages ───
+msgid "Telefon raqami +998XXXXXXXXX formatida bo'lishi kerak"
+msgstr "Telefon nomeri +998XXXXXXXXX formatında bolıwı kerek"
+
+msgid "Telefon raqami majburiy"
+msgstr "Telefon nomeri májbúriy"
+
+msgid "Email majburiy"
+msgstr "Email májbúriy"
+
+msgid "Hozirda ishlamayotgan bo'lsangiz, end_month va end_year majburiy"
+msgstr "Házir islemey atırǵan bolsańız, end_month hám end_year májbúriy"
+
+msgid "Avtorizatsiya talab qilinadi"
+msgstr "Avtorizatsiya talap etiledi"
+
+msgid "Avval rezyume yarating"
+msgstr "Aldın rezyume jaratıń"
+
+msgid "Siz allaqachon ushbu vakansiyaga ariza yuborgansiz"
+msgstr "Siz allaqashan bul wakansiyaǵa arza jibergensiz"
+
+msgid "Kod noto'g'ri yoki muddati o'tgan"
+msgstr "Kod nadurıs yamasa múddeti ótken"
+
+msgid "Parollar mos kelmadi"
+msgstr "Paroller maslıq kelmedi"
+
+msgid "Bu telefon raqami allaqachon ro'yxatdan o'tgan"
+msgstr "Bul telefon nomeri allaqashan dizimnen ótken"
+
+msgid "Bu email allaqachon ro'yxatdan o'tgan"
+msgstr "Bul email allaqashan dizimnen ótken"
+
+msgid "Parol noto'g'ri"
+msgstr "Parol nadurıs"
+
+msgid "Akkaunt bloklangan"
+msgstr "Akkaunt bloklanǵan"
+
+msgid "Bunday email ro'yxatdan o'tmagan"
+msgstr "Bunday email dizimnen ótpegen"
+
+msgid "Yangi parollar mos kelmadi"
+msgstr "Jańa paroller maslıq kelmedi"
+
+msgid "Foydalanuvchi topilmadi"
+msgstr "Paydalanıwshı tabılmadı"
+
+msgid "Eski parol noto'g'ri"
+msgstr "Eski parol nadurıs"
+
+msgid "Iltimos, %(seconds)d soniyadan so'ng qayta urinib ko'ring"
+msgstr "Iltimas, %(seconds)d sekundtan keyin qayta urınıp kóriń"
+
+msgid "Email yoki telefon raqami kiritilishi shart"
+msgstr "Email yamasa telefon nomeri kirgiziliwi shárt"
+
+msgid "Bu email bilan foydalanuvchi topilmadi"
+msgstr "Bul email menen paydalanıwshı tabılmadı"
+
+msgid "Bu telefon raqami bilan foydalanuvchi topilmadi"
+msgstr "Bul telefon nomeri menen paydalanıwshı tabılmadı"
+
+msgid "salary_to salary_from dan kichik bo'lmasligi kerak"
+msgstr "salary_to, salary_from den kishi bolmawı kerek"
+
+msgid "age_to age_from dan kichik bo'lmasligi kerak"
+msgstr "age_to, age_from den kishi bolmawı kerek"
+
+msgid "Bu vakansiya sizga tegishli emas"
+msgstr "Bul wakansiya sizge tiyisli emes"
+
+msgid "Yopilgan vakansiyaga taklif yuborish mumkin emas"
+msgstr "Jabıq wakansiyaǵa usınıs jiberiw múmkin emes"
+
+msgid "Rezyume nashr etilmagan"
+msgstr "Rezyume járiyalanbaǵan"
+
+msgid "Siz bu rezyumega ushbu vakansiya uchun allaqachon taklif yuborgansiz"
+msgstr "Siz bul rezyumege usı wakansiya ushın allaqashan usınıs jibergensiz"
+
+msgid "Bu status uchun ruxsat yo'q. Ruxsat etilganlari: %(allowed)s"
+msgstr "Bul status ushın ruqsat joq. Ruqsat etilgenleri: %(allowed)s"
+
+msgid "Yangi parol eskisidan farq qilishi kerak"
+msgstr "Jańa parol eskisinen ayırma bolıwı kerek"
+
+# ─── View responses ───
+msgid "Tasdiqlash kodi emailingizga yuborildi"
+msgstr "Tastıyıqlaw kodı email-ińizǵe jiberildi"
+
+msgid "refresh token majburiy"
+msgstr "refresh token májbúriy"
+
+msgid "Token yaroqsiz yoki muddati o'tgan"
+msgstr "Token jaramsız yamasa múddeti ótken"
+
+msgid "Tizimdan chiqildi"
+msgstr "Sistemadan shıǵıldı"
+
+msgid "Parolni tiklash kodi emailingizga yuborildi"
+msgstr "Paroldi tiklew kodı email-ińizǵe jiberildi"
+
+msgid "Parol muvaffaqiyatli yangilandi. Endi login qilishingiz mumkin"
+msgstr "Parol tabıslı jańalandı. Endi login qılıwıńız múmkin"
+
+msgid "Parol muvaffaqiyatli yangilandi"
+msgstr "Parol tabıslı jańalandı"
+
+msgid "O'chirildi"
+msgstr "Óshirildi"
+
+msgid "Saqlandi"
+msgstr "Saqlandı"
+
+msgid "Vakansiya topilmadi"
+msgstr "Wakansiya tabılmadı"
+
+msgid "Rezyume topilmadi"
+msgstr "Rezyume tabılmadı"
+
+msgid "Tashkilot biriktirilmagan"
+msgstr "Shólkem tirkelmegen"
+
+msgid "Bildirishnoma topilmadi"
+msgstr "Xabarnama tabılmadı"
+
+msgid "Rezyume hali yaratilmagan"
+msgstr "Rezyume tagı jaratılmaǵan"
+
+msgid "Rezyume allaqachon mavjud. Tahrirlash uchun PUT/PATCH dan foydalaning"
+msgstr "Rezyume allaqashan bar. Redaktorlaw ushın PUT/PATCH dan paydalanıń"
+
+msgid "Faqat 'Kutilmoqda' holatidagi arizani qaytarib olish mumkin"
+msgstr "Tek 'Kútilip atır' awhalındaǵı arzanı qaytarıp alıw múmkin"
+
+msgid "Ariza qaytarib olindi"
+msgstr "Arza qaytarıp alındı"
+
+msgid "Vakansiya yopildi"
+msgstr "Wakansiya jabıldı"
+
+msgid "Vakansiya faollashtirildi"
+msgstr "Wakansiya aktivlestirildi"
+
+msgid "Barcha bildirishnomalar o'qildi"
+msgstr "Barlıq xabarnamalar oqıldı"
+
+# ─── Email content ───
+msgid "Ushbu xabar avtomatik yuborildi. Javob bermang."
+msgstr "Bul xabar avtomatik jiberildi. Juwap bermeń."
+
+msgid "Agar siz emaillarni olishni xohlamasangiz, profil sozlamalaridan o'chiring."
+msgstr "Eger siz email aliwdı qálamasańız, profil sazlawlarınan óshiriń."
+
+msgid "Yangi ariza: %(name)s → %(profession)s"
+msgstr "Jańa arza: %(name)s → %(profession)s"
+
+msgid "Yangi ariza qabul qilindi"
+msgstr "Jańa arza qabıl etildi"
+
+msgid "Arizani ko'rish"
+msgstr "Arzanı kóriw"
+
+msgid "Sizga taklif: %(profession)s (%(org)s)"
+msgstr "Sizge usınıs: %(profession)s (%(org)s)"
+
+msgid "Sizga taklif keldi"
+msgstr "Sizge usınıs keldi"
+
+msgid "Taklifni ko'rish"
+msgstr "Usınıstı kóriw"
+
+msgid "Ariza holati: %(status)s — %(profession)s"
+msgstr "Arza awhalı: %(status)s — %(profession)s"
+
+msgid "Ariza holati o'zgardi"
+msgstr "Arza awhalı ózgerdi"
+
+msgid "Arizalarni ko'rish"
+msgstr "Arzalardı kóriw"
+
+# ─── Email body labels ───
+msgid "Nomzod"
+msgstr "Kandidat"
+
+msgid "vakansiyangiz"
+msgstr "wakansiyańız"
+
+msgid "Salom!"
+msgstr "Salem!"
+
+msgid "\"%(profession)s\" vakansiyangizga yangi ariza keldi."
+msgstr "\"%(profession)s\" wakansiyańızǵa jańa arza keldi."
+
+msgid "Kasb"
+msgstr "Kásip"
+
+msgid "Hudud"
+msgstr "Aymaq"
+
+msgid "Karyera darajasi"
+msgstr "Karyera dárejesi"
+
+msgid "Murojaat xati"
+msgstr "Múrájat xatı"
+
+msgid "Ko'rib chiqish"
+msgstr "Kórip shıǵıw"
+
+msgid "vakansiya"
+msgstr "wakansiya"
+
+msgid "Assalomu alaykum!"
+msgstr "Ássalawma aleykum!"
+
+msgid "%(org)s sizni \"%(profession)s\" lavozimiga taklif qildi."
+msgstr "%(org)s sizdi \"%(profession)s\" lawazımına usınıs qıldı."
+
+msgid "Ish rejimi"
+msgstr "Jumıs rejimi"
+
+msgid "Maosh"
+msgstr "Aylıq"
+
+msgid "Ish beruvchi xabari"
+msgstr "Jumıs beriwshi xabarı"
+
+msgid "Ish beruvchi izohi"
+msgstr "Jumıs beriwshi izahatı"
+
+msgid "Taklifni ko'rish"
+msgstr "Usınıstı kóriw"
+
+msgid "so'm"
+msgstr "swm"
+
+msgid "%(org)s (\"%(profession)s\") sizning arizangizning holatini o'zgartirdi."
+msgstr "%(org)s (\"%(profession)s\") arzańızdıń awhalın ózgertti."
+
+msgid "Izoh"
+msgstr "Izahat"

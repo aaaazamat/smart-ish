@@ -101,7 +101,7 @@ function ProfileMenu() {
         <div className="absolute right-0 top-full mt-2 w-60 bg-white rounded-xl border border-gray-100 shadow-lg overflow-hidden z-50">
           <div className="px-4 py-3 border-b border-gray-100">
             <div className="text-sm font-semibold text-gray-900 truncate">
-              {user?.phone_number || 'Foydalanuvchi'}
+              {user?.phone_number || t('nav.profile')}
             </div>
             <div className="text-xs text-gray-500 truncate">{user?.email}</div>
           </div>
@@ -171,7 +171,7 @@ function MobileMenu({ open, onClose, links, isAuthenticated, t }) {
             type="button"
             onClick={onClose}
             className="p-2 rounded-full text-gray-500 hover:bg-gray-100"
-            aria-label="Yopish"
+            aria-label={t('common.close')}
           >
             <X className="w-5 h-5" />
           </button>
@@ -206,7 +206,7 @@ function MobileMenu({ open, onClose, links, isAuthenticated, t }) {
         </nav>
 
         <div className="border-t border-gray-100 px-4 py-3 flex items-center justify-between">
-          <span className="text-xs text-gray-500">Til:</span>
+          <span className="text-xs text-gray-500">{t('mobile_menu.language')}:</span>
           <LanguageSwitcher compact />
         </div>
       </div>
@@ -266,7 +266,7 @@ function Header() {
           {/* Sevimlilar — faqat job_seeker uchun, desktopda */}
           {isAuthenticated && !isEmployer && !isAdmin && (
             <div className="hidden sm:block">
-              <IconLink to="/vacancies/liked" label="Sevimlilar">
+              <IconLink to="/vacancies/liked" label={t('nav.liked')}>
                 <Heart className="w-6 h-6" />
               </IconLink>
             </div>
@@ -274,7 +274,7 @@ function Header() {
 
           {/* Bildirishnomalar */}
           {isAuthenticated && (
-            <IconLink to="/notifications" label="Bildirishnomalar" badge={unreadCountValue}>
+            <IconLink to="/notifications" label={t('nav.notifications')} badge={unreadCountValue}>
               <Bell className="w-5 h-5 sm:w-6 sm:h-6" />
             </IconLink>
           )}
@@ -296,7 +296,7 @@ function Header() {
             type="button"
             onClick={() => setMobileOpen(true)}
             className="lg:hidden p-2 rounded-lg text-gray-700 hover:bg-gray-100 transition"
-            aria-label="Menyu"
+            aria-label={t('mobile_menu.open')}
           >
             <Menu className="w-6 h-6" />
           </button>

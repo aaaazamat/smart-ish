@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { ChevronDown, SlidersHorizontal, X } from 'lucide-react'
 import {
   useRegions,
@@ -34,6 +35,7 @@ function FilterSelect({ label, value, onChange, options, disabled, placeholder }
 }
 
 function FilterPanel({ filters, onChange, onClear }) {
+  const { t } = useTranslation()
   const { data: regions } = useRegions()
   const { data: districts } = useDistricts(filters.region)
   const { data: professions } = useProfessions()
@@ -56,43 +58,43 @@ function FilterPanel({ filters, onChange, onClear }) {
   const filterContent = (
     <>
       <div className="flex items-center justify-between mb-5 sm:mb-6">
-        <h2 className="text-lg font-semibold text-gray-900">Filtrlar</h2>
+        <h2 className="text-lg font-semibold text-gray-900">{t('vacancy.filters')}</h2>
         <button
           type="button"
           onClick={onClear}
           disabled={!hasActive}
           className="text-sm text-red-500 hover:text-red-600 font-medium disabled:text-gray-300 disabled:cursor-not-allowed transition"
         >
-          Tozalash
+          {t('common.clear')}
         </button>
       </div>
 
       <div className="space-y-4 sm:space-y-5">
         <FilterSelect
-          label="Hudud"
-          placeholder="Barcha hududlar"
+          label={t('filter.region')}
+          placeholder={t('filter.all_regions')}
           value={filters.region}
           onChange={setField('region')}
           options={regions}
         />
         <FilterSelect
-          label="Tuman / Shahar"
-          placeholder={filters.region ? 'Barcha tumanlar' : 'Avval hududni tanlang'}
+          label={t('filter.district')}
+          placeholder={filters.region ? t('filter.all_districts') : t('filter.select_region_first')}
           value={filters.district}
           onChange={setField('district')}
           options={districts}
           disabled={!filters.region}
         />
         <FilterSelect
-          label="Lavozim yoki kasb"
-          placeholder="Barcha kasblar"
+          label={t('filter.profession')}
+          placeholder={t('filter.all_professions')}
           value={filters.profession}
           onChange={setField('profession')}
           options={professions}
         />
         <FilterSelect
-          label="Sohalar"
-          placeholder="Barchasi"
+          label={t('filter.industry')}
+          placeholder={t('filter.all')}
           value={filters.industry}
           onChange={setField('industry')}
           options={industries}
@@ -112,7 +114,7 @@ function FilterPanel({ filters, onChange, onClear }) {
         >
           <span className="flex items-center gap-2">
             <SlidersHorizontal className="w-4 h-4 text-brand-500" />
-            Filtrlar
+            {t('vacancy.filters')}
           </span>
           {activeCount > 0 && (
             <span className="px-2 py-0.5 rounded-full bg-brand-500 text-white text-xs font-semibold">
@@ -130,12 +132,12 @@ function FilterPanel({ filters, onChange, onClear }) {
             />
             <div className="fixed inset-x-0 bottom-0 z-50 bg-white rounded-t-3xl shadow-2xl max-h-[85vh] flex flex-col animate-slide-up">
               <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 shrink-0">
-                <h3 className="text-base font-semibold text-gray-900">Filtrlar</h3>
+                <h3 className="text-base font-semibold text-gray-900">{t('vacancy.filters')}</h3>
                 <button
                   type="button"
                   onClick={() => setMobileOpen(false)}
                   className="p-2 rounded-full text-gray-500 hover:bg-gray-100"
-                  aria-label="Yopish"
+                  aria-label={t('common.close')}
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -149,7 +151,7 @@ function FilterPanel({ filters, onChange, onClear }) {
                   onClick={() => setMobileOpen(false)}
                   className="w-full py-3 rounded-xl bg-brand-500 text-white font-medium hover:bg-brand-600 transition"
                 >
-                  Ko'rsatish
+                  {t('common.show')}
                 </button>
               </div>
             </div>

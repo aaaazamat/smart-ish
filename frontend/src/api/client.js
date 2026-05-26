@@ -26,6 +26,9 @@ apiClient.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
   }
+  // Til (i18next saqlaydi) — backend Accept-Language orqali aniqlaydi
+  const lang = localStorage.getItem('i18n_language') || 'uz'
+  config.headers['Accept-Language'] = lang
   return config
 })
 

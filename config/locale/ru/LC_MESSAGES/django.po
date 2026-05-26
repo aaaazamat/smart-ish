@@ -1,0 +1,436 @@
+# Russian translations for Diplom_project (Job board).
+# Copyright (C) 2026
+# This file is distributed under the same license as the PACKAGE package.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: 1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-05-26 09:00+0500\n"
+"PO-Revision-Date: 2026-05-26 09:00+0500\n"
+"Last-Translator: Azamat Saribaev\n"
+"Language-Team: Russian\n"
+"Language: ru\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+
+# ─── settings.py LANGUAGES ───
+msgid "O'zbek"
+msgstr "Узбекский"
+
+msgid "Русский"
+msgstr "Русский"
+
+msgid "Qaraqalpaqsha"
+msgstr "Каракалпакский"
+
+# ─── models.py verbose_name'lar ───
+msgid "Viloyat/Hudud"
+msgstr "Область/Регион"
+
+msgid "Viloyatlar/Hududlar"
+msgstr "Области/Регионы"
+
+msgid "Tuman/Shahar"
+msgstr "Район/Город"
+
+msgid "Tuman/Shaharlar"
+msgstr "Районы/Города"
+
+msgid "Tashkilot"
+msgstr "Организация"
+
+msgid "Tashkilotlar"
+msgstr "Организации"
+
+msgid "Foydalanuvchi"
+msgstr "Пользователь"
+
+msgid "Foydalanuvchilar"
+msgstr "Пользователи"
+
+msgid "Kasb/Lavozim"
+msgstr "Профессия/Должность"
+
+msgid "Kasblar/Lavozimlar"
+msgstr "Профессии/Должности"
+
+msgid "Ko'nikma"
+msgstr "Навык"
+
+msgid "Ko'nikmalar"
+msgstr "Навыки"
+
+msgid "O'quv muassasasi"
+msgstr "Учебное заведение"
+
+msgid "O'quv muassasalari"
+msgstr "Учебные заведения"
+
+msgid "Yo'nalish"
+msgstr "Направление"
+
+msgid "Yo'nalishlar"
+msgstr "Направления"
+
+msgid "Soha"
+msgstr "Отрасль"
+
+msgid "Sohalar"
+msgstr "Отрасли"
+
+msgid "Rezyume"
+msgstr "Резюме"
+
+msgid "Rezyumelar"
+msgstr "Резюме"
+
+msgid "Rezyume tili"
+msgstr "Язык резюме"
+
+msgid "Rezyume tillari"
+msgstr "Языки резюме"
+
+msgid "Ish tajribasi"
+msgstr "Опыт работы"
+
+msgid "Ish tajribalari"
+msgstr "Опыт работы"
+
+msgid "Ta'lim"
+msgstr "Образование"
+
+msgid "Ta'limlar"
+msgstr "Образование"
+
+msgid "Sertifikat"
+msgstr "Сертификат"
+
+msgid "Sertifikatlar"
+msgstr "Сертификаты"
+
+msgid "Vakansiya"
+msgstr "Вакансия"
+
+msgid "Vakansiyalar"
+msgstr "Вакансии"
+
+msgid "Vakansiya til talabi"
+msgstr "Языковое требование вакансии"
+
+msgid "Vakansiya til talablari"
+msgstr "Языковые требования вакансий"
+
+msgid "Saqlangan vakansiya"
+msgstr "Сохранённая вакансия"
+
+msgid "Saqlangan vakansiyalar"
+msgstr "Сохранённые вакансии"
+
+msgid "Ariza/Taklif"
+msgstr "Заявка/Приглашение"
+
+msgid "Arizalar/Takliflar"
+msgstr "Заявки/Приглашения"
+
+msgid "OTP kod"
+msgstr "OTP код"
+
+msgid "OTP kodlar"
+msgstr "OTP коды"
+
+msgid "Rezyume ko'rishi"
+msgstr "Просмотр резюме"
+
+msgid "Rezyume ko'rishlari"
+msgstr "Просмотры резюме"
+
+msgid "Bildirishnoma"
+msgstr "Уведомление"
+
+msgid "Bildirishnomalar"
+msgstr "Уведомления"
+
+msgid "Shikoyat"
+msgstr "Жалоба"
+
+msgid "Shikoyatlar"
+msgstr "Жалобы"
+
+# ─── Role choices ───
+msgid "Ish izlovchi"
+msgstr "Соискатель"
+
+msgid "Ish beruvchi"
+msgstr "Работодатель"
+
+msgid "Administrator"
+msgstr "Администратор"
+
+# ─── Help texts ───
+msgid "Profil rasmi (kvadrat shaklida tavsiya etiladi)"
+msgstr "Фото профиля (рекомендуется квадратной формы)"
+
+msgid "Ish beruvchi izohi"
+msgstr "Комментарий работодателя"
+
+msgid "Bildirishnoma yuboriladigan foydalanuvchi"
+msgstr "Пользователь, которому будет отправлено уведомление"
+
+msgid "Shikoyat yuborgan foydalanuvchi"
+msgstr "Пользователь, отправивший жалобу"
+
+msgid "Shikoyat qilinayotgan ob'ekt ID si"
+msgstr "ID объекта, на который подана жалоба"
+
+msgid "Qo'shimcha tushuntirish"
+msgstr "Дополнительное пояснение"
+
+msgid "Admin javobi/qarori"
+msgstr "Ответ/решение администратора"
+
+# ─── Validation messages ───
+msgid "Telefon raqami +998XXXXXXXXX formatida bo'lishi kerak"
+msgstr "Номер телефона должен быть в формате +998XXXXXXXXX"
+
+msgid "Telefon raqami majburiy"
+msgstr "Номер телефона обязателен"
+
+msgid "Email majburiy"
+msgstr "Email обязателен"
+
+msgid "Hozirda ishlamayotgan bo'lsangiz, end_month va end_year majburiy"
+msgstr "Если вы сейчас не работаете, end_month и end_year обязательны"
+
+msgid "Avtorizatsiya talab qilinadi"
+msgstr "Требуется авторизация"
+
+msgid "Avval rezyume yarating"
+msgstr "Сначала создайте резюме"
+
+msgid "Siz allaqachon ushbu vakansiyaga ariza yuborgansiz"
+msgstr "Вы уже подали заявку на эту вакансию"
+
+msgid "Kod noto'g'ri yoki muddati o'tgan"
+msgstr "Код неверный или истёк"
+
+msgid "Parollar mos kelmadi"
+msgstr "Пароли не совпадают"
+
+msgid "Bu telefon raqami allaqachon ro'yxatdan o'tgan"
+msgstr "Этот номер телефона уже зарегистрирован"
+
+msgid "Bu email allaqachon ro'yxatdan o'tgan"
+msgstr "Этот email уже зарегистрирован"
+
+msgid "Parol noto'g'ri"
+msgstr "Неверный пароль"
+
+msgid "Akkaunt bloklangan"
+msgstr "Аккаунт заблокирован"
+
+msgid "Bunday email ro'yxatdan o'tmagan"
+msgstr "Такой email не зарегистрирован"
+
+msgid "Yangi parollar mos kelmadi"
+msgstr "Новые пароли не совпадают"
+
+msgid "Foydalanuvchi topilmadi"
+msgstr "Пользователь не найден"
+
+msgid "Eski parol noto'g'ri"
+msgstr "Неверный старый пароль"
+
+msgid "Iltimos, %(seconds)d soniyadan so'ng qayta urinib ko'ring"
+msgstr "Пожалуйста, попробуйте снова через %(seconds)d секунд"
+
+msgid "Email yoki telefon raqami kiritilishi shart"
+msgstr "Необходимо ввести email или номер телефона"
+
+msgid "Bu email bilan foydalanuvchi topilmadi"
+msgstr "Пользователь с таким email не найден"
+
+msgid "Bu telefon raqami bilan foydalanuvchi topilmadi"
+msgstr "Пользователь с таким номером телефона не найден"
+
+msgid "salary_to salary_from dan kichik bo'lmasligi kerak"
+msgstr "salary_to не должно быть меньше salary_from"
+
+msgid "age_to age_from dan kichik bo'lmasligi kerak"
+msgstr "age_to не должно быть меньше age_from"
+
+msgid "Bu vakansiya sizga tegishli emas"
+msgstr "Эта вакансия не принадлежит вам"
+
+msgid "Yopilgan vakansiyaga taklif yuborish mumkin emas"
+msgstr "Невозможно отправить приглашение на закрытую вакансию"
+
+msgid "Rezyume nashr etilmagan"
+msgstr "Резюме не опубликовано"
+
+msgid "Siz bu rezyumega ushbu vakansiya uchun allaqachon taklif yuborgansiz"
+msgstr "Вы уже отправили приглашение этому резюме на эту вакансию"
+
+msgid "Bu status uchun ruxsat yo'q. Ruxsat etilganlari: %(allowed)s"
+msgstr "Нет разрешения на этот статус. Разрешённые: %(allowed)s"
+
+msgid "Yangi parol eskisidan farq qilishi kerak"
+msgstr "Новый пароль должен отличаться от старого"
+
+# ─── View responses ───
+msgid "Tasdiqlash kodi emailingizga yuborildi"
+msgstr "Код подтверждения отправлен на ваш email"
+
+msgid "refresh token majburiy"
+msgstr "refresh token обязателен"
+
+msgid "Token yaroqsiz yoki muddati o'tgan"
+msgstr "Токен недействителен или истёк"
+
+msgid "Tizimdan chiqildi"
+msgstr "Вы вышли из системы"
+
+msgid "Parolni tiklash kodi emailingizga yuborildi"
+msgstr "Код восстановления пароля отправлен на ваш email"
+
+msgid "Parol muvaffaqiyatli yangilandi. Endi login qilishingiz mumkin"
+msgstr "Пароль успешно обновлён. Теперь вы можете войти"
+
+msgid "Parol muvaffaqiyatli yangilandi"
+msgstr "Пароль успешно обновлён"
+
+msgid "O'chirildi"
+msgstr "Удалено"
+
+msgid "Saqlandi"
+msgstr "Сохранено"
+
+msgid "Vakansiya topilmadi"
+msgstr "Вакансия не найдена"
+
+msgid "Rezyume topilmadi"
+msgstr "Резюме не найдено"
+
+msgid "Tashkilot biriktirilmagan"
+msgstr "Организация не привязана"
+
+msgid "Bildirishnoma topilmadi"
+msgstr "Уведомление не найдено"
+
+msgid "Rezyume hali yaratilmagan"
+msgstr "Резюме ещё не создано"
+
+msgid "Rezyume allaqachon mavjud. Tahrirlash uchun PUT/PATCH dan foydalaning"
+msgstr "Резюме уже существует. Используйте PUT/PATCH для редактирования"
+
+msgid "Faqat 'Kutilmoqda' holatidagi arizani qaytarib olish mumkin"
+msgstr "Отозвать можно только заявку со статусом 'В ожидании'"
+
+msgid "Ariza qaytarib olindi"
+msgstr "Заявка отозвана"
+
+msgid "Vakansiya yopildi"
+msgstr "Вакансия закрыта"
+
+msgid "Vakansiya faollashtirildi"
+msgstr "Вакансия активирована"
+
+msgid "Barcha bildirishnomalar o'qildi"
+msgstr "Все уведомления прочитаны"
+
+# ─── Email content ───
+msgid "Ushbu xabar avtomatik yuborildi. Javob bermang."
+msgstr "Это сообщение отправлено автоматически. Не отвечайте на него."
+
+msgid "Agar siz emaillarni olishni xohlamasangiz, profil sozlamalaridan o'chiring."
+msgstr "Если вы не хотите получать письма, отключите их в настройках профиля."
+
+msgid "Yangi ariza: %(name)s → %(profession)s"
+msgstr "Новая заявка: %(name)s → %(profession)s"
+
+msgid "Yangi ariza qabul qilindi"
+msgstr "Получена новая заявка"
+
+msgid "Arizani ko'rish"
+msgstr "Посмотреть заявку"
+
+msgid "Sizga taklif: %(profession)s (%(org)s)"
+msgstr "Вам приглашение: %(profession)s (%(org)s)"
+
+msgid "Sizga taklif keldi"
+msgstr "Вам пришло приглашение"
+
+msgid "Taklifni ko'rish"
+msgstr "Посмотреть приглашение"
+
+msgid "Ariza holati: %(status)s — %(profession)s"
+msgstr "Статус заявки: %(status)s — %(profession)s"
+
+msgid "Ariza holati o'zgardi"
+msgstr "Статус заявки изменён"
+
+msgid "Arizalarni ko'rish"
+msgstr "Посмотреть заявки"
+
+# ─── Email body labels ───
+msgid "Nomzod"
+msgstr "Кандидат"
+
+msgid "vakansiyangiz"
+msgstr "вашей вакансии"
+
+msgid "Salom!"
+msgstr "Здравствуйте!"
+
+msgid "\"%(profession)s\" vakansiyangizga yangi ariza keldi."
+msgstr "На вашу вакансию \"%(profession)s\" поступила новая заявка."
+
+msgid "Kasb"
+msgstr "Профессия"
+
+msgid "Hudud"
+msgstr "Регион"
+
+msgid "Karyera darajasi"
+msgstr "Уровень карьеры"
+
+msgid "Murojaat xati"
+msgstr "Сопроводительное письмо"
+
+msgid "Ko'rib chiqish"
+msgstr "Рассмотреть"
+
+msgid "vakansiya"
+msgstr "вакансия"
+
+msgid "Assalomu alaykum!"
+msgstr "Здравствуйте!"
+
+msgid "%(org)s sizni \"%(profession)s\" lavozimiga taklif qildi."
+msgstr "%(org)s приглашает вас на должность \"%(profession)s\"."
+
+msgid "Ish rejimi"
+msgstr "Режим работы"
+
+msgid "Maosh"
+msgstr "Зарплата"
+
+msgid "Ish beruvchi xabari"
+msgstr "Сообщение от работодателя"
+
+msgid "Ish beruvchi izohi"
+msgstr "Комментарий работодателя"
+
+msgid "Taklifni ko'rish"
+msgstr "Посмотреть приглашение"
+
+msgid "so'm"
+msgstr "сум"
+
+msgid "%(org)s (\"%(profession)s\") sizning arizangizning holatini o'zgartirdi."
+msgstr "%(org)s (\"%(profession)s\") изменил статус вашей заявки."
+
+msgid "Izoh"
+msgstr "Комментарий"

@@ -18,14 +18,19 @@ logger = logging.getLogger(__name__)
 
 # ─── Cache yordamchilari ──────────────────────
 
-def _match_cache_key(resume, vacancy) -> str:
-    """Rezyume va vakansiyaning oxirgi yangilanish sanasi asosida kalit yaratish."""
+def _match_cache_key(resume, vacancy, lang: str = "uz") -> str:
+    """Rezyume va vakansiyaning oxirgi yangilanish sanasi asosida kalit yaratish.
+
+    Til'ni ham hisobga oladi — AI summary lang'ga bog'liq, demak ru natija uz
+    so'rovchiga qaytarilmasligi kerak.
+    """
     parts = [
         "ai_match",
         f"r{resume.id}",
         f"ru{int(resume.updated_at.timestamp())}",
         f"v{vacancy.id}",
         f"vu{int(vacancy.updated_at.timestamp())}",
+        f"l{(lang or 'uz').split('-')[0]}",
     ]
     raw = "|".join(parts)
     # Qisqa va xavfsiz kalit
@@ -36,6 +41,19 @@ GEMINI_URL = (
     "https://generativelanguage.googleapis.com/v1beta/"
     "models/gemini-2.5-flash:generateContent"
 )
+
+
+# Til kodlari uchun inson o'qiy oladigan nomlar (prompt'larda ishlatiladi)
+LANG_NAMES = {
+    "uz": "lotin alifbosida o'zbek tili",
+    "ru": "rus tili",
+    "qaa": "lotin alifbosida qoraqalpoq tili (Qaraqalpaqsha)",
+}
+
+
+def _lang_label(lang: str) -> str:
+    """Yaroqli til kodi bo'lsa nomini qaytaradi, aks holda — uz."""
+    return LANG_NAMES.get((lang or "uz").split("-")[0].lower(), LANG_NAMES["uz"])
 
 
 class AIServiceError(Exception):
@@ -107,11 +125,21 @@ def _call_gemini(
         raise AIServiceError("AI javobini tushunib bo'lmadi")
 
 
-def generate_vacancy_description(profession: str, industry: str = "", keywords: str = "") -> str:
-    """Vakansiya tavsifini AI yordamida yaratish."""
+def generate_vacancy_description(
+    profession: str,
+    industry: str = "",
+    keywords: str = "",
+    lang: str = "uz",
+) -> str:
+    """Vakansiya tavsifini AI yordamida yaratish.
+
+    Args:
+        lang: matn qaysi tilda yozilsin ("uz" / "ru" / "qaa"). Default: uz.
+    """
+    target_lang = _lang_label(lang)
     prompt = f"""Sen professional HR mutaxassisi va ish e'lonlari yozuvchisisan.
 
-Quyidagi vakansiya uchun professional, jozibador va aniq tavsif yoz (FAQAT O'ZBEK TILIDA, lotin alifbosida).
+Quyidagi vakansiya uchun professional, jozibador va aniq tavsif yoz (FAQAT {target_lang.upper()}DA).
 
 Lavozim: {profession}
 {f'Soha: {industry}' if industry else ''}
@@ -125,7 +153,7 @@ Tuzilish (har bir qism alohida paragraf yoki ro'yxat):
 4. **Biz taklif qilamiz** — 3-5 ta bullet (maosh oraligi, sharoit, imtiyozlar)
 
 Qoidalar:
-- FAQAT lotin alifbosida o'zbek tilida yoz
+- FAQAT {target_lang}da yoz
 - Professional, do'stona, motivatsion ohang
 - 250-400 so'z
 - Markdown formati: bullet'lar uchun "- ", sarlavhalar uchun "**Sarlavha**"
@@ -167,12 +195,13 @@ QOIDALAR:
 """
 
 
-def chat(messages: list, user_role: str = "guest") -> str:
+def chat(messages: list, user_role: str = "guest", lang: str = "uz") -> str:
     """
     AI chatbot bilan suhbat.
 
     messages: [{role: "user"|"assistant", content: "..."}]
     user_role: "guest" | "job_seeker" | "employer" | "admin"
+    lang: javob qaysi tilda berilsin ("uz" / "ru" / "qaa")
     """
     role_context = {
         "guest": "Foydalanuvchi tizimga kirmagan (mehmon).",
@@ -181,7 +210,12 @@ def chat(messages: list, user_role: str = "guest") -> str:
         "admin": "Foydalanuvchi — administrator.",
     }.get(user_role, "Foydalanuvchi roli noma'lum.")
 
-    system = f"{CHAT_SYSTEM_PROMPT}\n\nKontekst: {role_context}"
+    target_lang = _lang_label(lang)
+    lang_override = (
+        f"\n\nMUHIM: JAVOBNI FAQAT {target_lang.upper()}DA YOZ. "
+        f"System prompt'da boshqa til ko'rsatilgan bo'lsa ham, sen {target_lang}da javob ber."
+    )
+    system = f"{CHAT_SYSTEM_PROMPT}\n\nKontekst: {role_context}{lang_override}"
 
     contents = []
     for msg in messages[-20:]:  # oxirgi 20 ta xabar
@@ -208,18 +242,19 @@ def chat(messages: list, user_role: str = "guest") -> str:
 
 # ─── Smart Matching ───────────────────────────
 
-def calculate_match(resume, vacancy, use_cache: bool = True) -> dict:
+def calculate_match(resume, vacancy, use_cache: bool = True, lang: str = "uz") -> dict:
     """
     Rezyume va vakansiya orasidagi mos kelish darajasini AI orqali baholash.
 
     resume, vacancy — ORM obyektlari.
     use_cache — natijani keshdan o'qish/yozish (default: True).
+    lang — `summary` qaysi tilda yozilsin (uz/ru/qaa).
+
     Returns: {score: int, matched: [str], missing: [str], summary: str, _cached: bool}
     """
-    # Keshdan tekshirish — agar rezyume yoki vakansiya yangilanmagan bo'lsa,
-    # avval hisoblangan natijani qaytaramiz
+    # Keshdan tekshirish — til'ga ham bog'liq, demak ru/qaa uchun alohida cache
     if use_cache:
-        key = _match_cache_key(resume, vacancy)
+        key = _match_cache_key(resume, vacancy, lang)
         cached = cache.get(key)
         if cached is not None:
             logger.debug("AI match cache HIT: %s", key)
@@ -266,7 +301,7 @@ Quyidagi JSON formatida javob qaytar (faqat JSON, boshqa hech narsa, markdown ha
   "score": <0 dan 100 gacha butun son — qanchalik mos>,
   "matched": ["3-5 ta mos keluvchi kuchli tomon"],
   "missing": ["1-3 ta yetishmayotgan yoki nomos narsa, agar bor bo'lsa"],
-  "summary": "1-2 jumla qisqa xulosa (o'zbek tilida)"
+  "summary": "1-2 jumla qisqa xulosa ({summary_lang}da)"
 }}
 
 Baholash mezonlari:
@@ -275,7 +310,12 @@ Baholash mezonlari:
 - Tajriba darajasi mosligi
 - Maosh kutishi
 - Hudud mosligi
-- Bandlik turi mosligi"""
+- Bandlik turi mosligi
+
+MUHIM: "summary" maydonini FAQAT {summary_lang}da yoz.
+"matched" va "missing" massivlardagi qisqa iboralar ham {summary_lang}da bo'lsin.""".replace(
+        "{summary_lang}", _lang_label(lang)
+    )
 
     raw = _call_gemini(
         prompt=prompt,
@@ -325,7 +365,7 @@ Baholash mezonlari:
     if use_cache:
         try:
             ttl = getattr(settings, "CACHE_TTL_AI_MATCH", 3600)
-            cache.set(_match_cache_key(resume, vacancy), payload, timeout=ttl)
+            cache.set(_match_cache_key(resume, vacancy, lang), payload, timeout=ttl)
             logger.debug("AI match cache SET: score=%s", payload["score"])
         except Exception as e:
             logger.warning("Cache set failed: %s", e)

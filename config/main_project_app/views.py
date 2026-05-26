@@ -1,6 +1,7 @@
 from django.db import models as db_models
 from django.db.models import F
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 
 from django.conf import settings
 from django.core.cache import cache
@@ -94,7 +95,7 @@ class OTPSendView(APIView):
             )
 
         return Response(
-            {"detail": "Tasdiqlash kodi emailingizga yuborildi"},
+            {"detail": _("Tasdiqlash kodi emailingizga yuborildi")},
             status=status.HTTP_200_OK,
         )
 
@@ -149,7 +150,7 @@ class LogoutView(APIView):
         refresh_token = request.data.get("refresh")
         if not refresh_token:
             return Response(
-                {"detail": "refresh token majburiy"},
+                {"detail": _("refresh token majburiy")},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         try:
@@ -157,10 +158,10 @@ class LogoutView(APIView):
             token.blacklist()
         except TokenError:
             return Response(
-                {"detail": "Token yaroqsiz yoki muddati o'tgan"},
+                {"detail": _("Token yaroqsiz yoki muddati o'tgan")},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        return Response({"detail": "Tizimdan chiqildi"}, status=status.HTTP_205_RESET_CONTENT)
+        return Response({"detail": _("Tizimdan chiqildi")}, status=status.HTTP_205_RESET_CONTENT)
 
 
 class ProfileView(APIView):
@@ -201,7 +202,7 @@ class PasswordResetRequestView(APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(
-            {"detail": "Parolni tiklash kodi emailingizga yuborildi"},
+            {"detail": _("Parolni tiklash kodi emailingizga yuborildi")},
             status=status.HTTP_200_OK,
         )
 
@@ -220,7 +221,7 @@ class PasswordResetConfirmView(APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(
-            {"detail": "Parol muvaffaqiyatli yangilandi. Endi login qilishingiz mumkin"},
+            {"detail": _("Parol muvaffaqiyatli yangilandi. Endi login qilishingiz mumkin")},
             status=status.HTTP_200_OK,
         )
 
@@ -249,7 +250,7 @@ class PasswordChangeView(APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(
-            {"detail": "Parol muvaffaqiyatli yangilandi"},
+            {"detail": _("Parol muvaffaqiyatli yangilandi")},
             status=status.HTTP_200_OK,
         )
 
@@ -441,13 +442,13 @@ class VacancyLikeToggleView(APIView):
         try:
             vacancy = Vacancy.objects.get(pk=pk, is_active=True)
         except Vacancy.DoesNotExist:
-            return Response({"detail": "Vakansiya topilmadi"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"detail": _("Vakansiya topilmadi")}, status=status.HTTP_404_NOT_FOUND)
 
         like, created = VacancyLike.objects.get_or_create(user=request.user, vacancy=vacancy)
         if not created:
             like.delete()
-            return Response({"liked": False, "detail": "O'chirildi"})
-        return Response({"liked": True, "detail": "Saqlandi"}, status=status.HTTP_201_CREATED)
+            return Response({"liked": False, "detail": _("O'chirildi")})
+        return Response({"liked": True, "detail": _("Saqlandi")}, status=status.HTTP_201_CREATED)
 
 
 class LikedVacancyListView(generics.ListAPIView):
@@ -542,13 +543,13 @@ class MyResumeView(APIView):
 
     def get(self, request):
         if not hasattr(request.user, "resume"):
-            return Response({"detail": "Rezyume hali yaratilmagan"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"detail": _("Rezyume hali yaratilmagan")}, status=status.HTTP_404_NOT_FOUND)
         return Response(ResumeDetailSerializer(request.user.resume).data)
 
     def post(self, request):
         if hasattr(request.user, "resume"):
             return Response(
-                {"detail": "Rezyume allaqachon mavjud. Tahrirlash uchun PUT/PATCH dan foydalaning"},
+                {"detail": _("Rezyume allaqachon mavjud. Tahrirlash uchun PUT/PATCH dan foydalaning")},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         serializer = ResumeWriteSerializer(data=request.data)
@@ -564,7 +565,7 @@ class MyResumeView(APIView):
 
     def _update(self, request, partial: bool):
         if not hasattr(request.user, "resume"):
-            return Response({"detail": "Rezyume topilmadi"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"detail": _("Rezyume topilmadi")}, status=status.HTTP_404_NOT_FOUND)
         serializer = ResumeWriteSerializer(request.user.resume, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
         resume = serializer.save()
@@ -594,7 +595,7 @@ class MyResumeViewsView(APIView):
             return Response({
                 "total": 0, "unique_organizations": 0, "last_7_days": 0,
                 "views": [],
-                "detail": "Avval rezyume yarating",
+                "detail": _("Avval rezyume yarating"),
             })
 
         resume = request.user.resume
@@ -720,7 +721,7 @@ class ApplyToVacancyView(APIView):
 
     def post(self, request, vacancy_id):
         if not Vacancy.objects.filter(pk=vacancy_id, is_active=True).exists():
-            return Response({"detail": "Vakansiya topilmadi"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"detail": _("Vakansiya topilmadi")}, status=status.HTTP_404_NOT_FOUND)
 
         data = request.data.copy()
         data["vacancy"] = vacancy_id
@@ -774,11 +775,11 @@ class MyApplicationDetailView(generics.RetrieveDestroyAPIView):
         application = self.get_object()
         if application.status != Application.Status.PENDING:
             return Response(
-                {"detail": "Faqat 'Kutilmoqda' holatidagi arizani qaytarib olish mumkin"},
+                {"detail": _("Faqat 'Kutilmoqda' holatidagi arizani qaytarib olish mumkin")},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         application.delete()
-        return Response({"detail": "Ariza qaytarib olindi"}, status=status.HTTP_204_NO_CONTENT)
+        return Response({"detail": _("Ariza qaytarib olindi")}, status=status.HTTP_204_NO_CONTENT)
 
 
 class MyApplicationStatsView(APIView):
@@ -840,7 +841,7 @@ def _compute_top_vacancies_for_user(user_id: int) -> dict:
 
     def score_vacancy(vacancy):
         try:
-            m = calculate_match(resume, vacancy)
+            m = calculate_match(resume, vacancy, lang=getattr(request, "LANGUAGE_CODE", "uz") or "uz")
             return {
                 "vacancy_id": vacancy.id,
                 "profession_name": vacancy.profession.name if vacancy.profession else "Vakansiya",
@@ -941,7 +942,7 @@ def _compute_top_resumes_for_vacancy(vacancy_id: int, employer_id: int) -> dict:
 
     def score_candidate(resume):
         try:
-            m = calculate_match(resume, vacancy)
+            m = calculate_match(resume, vacancy, lang=getattr(request, "LANGUAGE_CODE", "uz") or "uz")
             full_name = " ".join(filter(None, [resume.last_name, resume.first_name]))
             return {
                 "resume_id": resume.id,
@@ -1056,7 +1057,7 @@ class AiMatchView(APIView):
             ).get(pk=vacancy_id)
         except Vacancy.DoesNotExist:
             return Response(
-                {"detail": "Vakansiya topilmadi"},
+                {"detail": _("Vakansiya topilmadi")},
                 status=status.HTTP_404_NOT_FOUND,
             )
 
@@ -1069,7 +1070,7 @@ class AiMatchView(APIView):
                 ).prefetch_related("skills", "work_experiences").get(pk=resume_id)
             except Resume.DoesNotExist:
                 return Response(
-                    {"detail": "Rezyume topilmadi"},
+                    {"detail": _("Rezyume topilmadi")},
                     status=status.HTTP_404_NOT_FOUND,
                 )
             # Permission: employer can only check their vacancy's potential matches
@@ -1088,7 +1089,7 @@ class AiMatchView(APIView):
             resume = user.resume
 
         try:
-            result = calculate_match(resume, vacancy)
+            result = calculate_match(resume, vacancy, lang=getattr(request, "LANGUAGE_CODE", "uz") or "uz")
             return Response(result)
         except AIServiceError as e:
             return Response(
@@ -1134,7 +1135,7 @@ class AiChatView(APIView):
             user_role = getattr(request.user, "role", "guest")
 
         try:
-            reply = chat(clean, user_role=user_role)
+            reply = chat(clean, user_role=user_role, lang=getattr(request, "LANGUAGE_CODE", "uz") or "uz")
             return Response({"reply": reply})
         except AIServiceError as e:
             return Response(
@@ -1185,6 +1186,7 @@ class GenerateVacancyDescriptionView(APIView):
                 profession=profession.name,
                 industry=industry_name,
                 keywords=keywords,
+                lang=getattr(request, "LANGUAGE_CODE", "uz") or "uz",
             )
             return Response({"description": text})
         except AIServiceError as e:
@@ -1215,7 +1217,7 @@ class EmployerOrganizationView(APIView):
         org = request.user.organization
         if not org:
             return Response(
-                {"detail": "Tashkilot biriktirilmagan"},
+                {"detail": _("Tashkilot biriktirilmagan")},
                 status=status.HTTP_404_NOT_FOUND,
             )
         return Response(
@@ -1226,7 +1228,7 @@ class EmployerOrganizationView(APIView):
         org = request.user.organization
         if not org:
             return Response(
-                {"detail": "Tashkilot biriktirilmagan"},
+                {"detail": _("Tashkilot biriktirilmagan")},
                 status=status.HTTP_404_NOT_FOUND,
             )
         serializer = EmployerOrganizationSerializer(
@@ -1318,14 +1320,14 @@ class EmployerVacancyToggleActiveView(APIView):
         try:
             vacancy = Vacancy.objects.get(pk=pk, employer=request.user)
         except Vacancy.DoesNotExist:
-            return Response({"detail": "Vakansiya topilmadi"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"detail": _("Vakansiya topilmadi")}, status=status.HTTP_404_NOT_FOUND)
 
         vacancy.is_active = not vacancy.is_active
         vacancy.save(update_fields=["is_active", "updated_at"])
         return Response({
             "id": vacancy.id,
             "is_active": vacancy.is_active,
-            "detail": "Vakansiya yopildi" if not vacancy.is_active else "Vakansiya faollashtirildi",
+            "detail": _("Vakansiya yopildi") if not vacancy.is_active else _("Vakansiya faollashtirildi"),
         })
 
 
@@ -1704,7 +1706,7 @@ class EmployerVacancyMatchedResumesView(APIView):
                 pk=vacancy_id, employer=request.user
             )
         except Vacancy.DoesNotExist:
-            return Response({"detail": "Vakansiya topilmadi"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"detail": _("Vakansiya topilmadi")}, status=status.HTTP_404_NOT_FOUND)
 
         # Birinchi navbatda kasb yoki hudud bo'yicha asosiy filter
         candidates = (
@@ -1919,7 +1921,7 @@ class NotificationMarkReadView(APIView):
             notification = Notification.objects.get(pk=pk, user=request.user)
         except Notification.DoesNotExist:
             return Response(
-                {"detail": "Bildirishnoma topilmadi"},
+                {"detail": _("Bildirishnoma topilmadi")},
                 status=status.HTTP_404_NOT_FOUND,
             )
         if not notification.is_read:
@@ -1940,7 +1942,7 @@ class NotificationMarkAllReadView(APIView):
         )
         return Response({
             "updated": updated,
-            "detail": "Barcha bildirishnomalar o'qildi",
+            "detail": _("Barcha bildirishnomalar o'qildi"),
         })
 
 
@@ -1953,7 +1955,7 @@ class NotificationDeleteView(APIView):
             notification = Notification.objects.get(pk=pk, user=request.user)
         except Notification.DoesNotExist:
             return Response(
-                {"detail": "Bildirishnoma topilmadi"},
+                {"detail": _("Bildirishnoma topilmadi")},
                 status=status.HTTP_404_NOT_FOUND,
             )
         notification.delete()

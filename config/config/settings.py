@@ -10,6 +10,7 @@ from datetime import timedelta
 
 from decouple import Csv, config
 import dj_database_url
+from django.utils.translation import gettext_lazy as _
 
 # BASE_DIR — `config/` papkasi (manage.py joylashgan joy)
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -56,6 +57,10 @@ MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    # LocaleMiddleware — SessionMiddleware'dan keyin, CommonMiddleware'dan oldin.
+    # Accept-Language header yoki sessiyadagi tilni aniqlab, request.LANGUAGE_CODE
+    # ga yozadi (uz/ru/qaa). DRF view'lar va serializer'lar shu orqali tilni biladi.
+    "django.middleware.locale.LocaleMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -235,8 +240,17 @@ AUTH_PASSWORD_VALIDATORS = [
 
 # ──────────────────────────────────────────────
 # I18N / TZ
+# 3 ta til qo'llab-quvvatlanadi: o'zbek (uz), rus (ru), qoraqalpoq lotin (qaa).
+# LocaleMiddleware Accept-Language header orqali tilni aniqlaydi.
+# Tarjimalar config/locale/<lang>/LC_MESSAGES/django.{po,mo} fayllarda.
 # ──────────────────────────────────────────────
 LANGUAGE_CODE = "uz"
+LANGUAGES = [
+    ("uz", _("O'zbek")),
+    ("ru", _("Русский")),
+    ("qaa", _("Qaraqalpaqsha")),
+]
+LOCALE_PATHS = [BASE_DIR / "locale"]
 TIME_ZONE = "Asia/Tashkent"
 USE_I18N = True
 USE_TZ = True

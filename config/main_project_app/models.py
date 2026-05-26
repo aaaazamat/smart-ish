@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.core.validators import RegexValidator
+from django.utils.translation import gettext_lazy as _
 
 
 # ─────────────────────────────────────────────
@@ -9,28 +10,42 @@ from django.core.validators import RegexValidator
 
 class Region(models.Model):
     name = models.CharField(max_length=100, unique=True)
+    # Ko'p tilli versiyalar — AI bilan tarjima qilinadi (translation_service.py).
+    name_uz = models.CharField(max_length=100, blank=True, default="")
+    name_ru = models.CharField(max_length=100, blank=True, default="")
+    name_qaa = models.CharField(max_length=100, blank=True, default="")
 
     class Meta:
-        verbose_name = "Viloyat/Hudud"
-        verbose_name_plural = "Viloyatlar/Hududlar"
+        verbose_name = _("Viloyat/Hudud")
+        verbose_name_plural = _("Viloyatlar/Hududlar")
         ordering = ["name"]
 
     def __str__(self):
         return self.name
 
+    def get_localized_name(self, lang: str = "uz") -> str:
+        """Tilga qarab name_uz / name_ru / name_qaa qaytaradi (fallback: uz, keyin name)."""
+        return getattr(self, f"name_{lang}", "") or self.name_uz or self.name
+
 
 class District(models.Model):
     region = models.ForeignKey(Region, on_delete=models.CASCADE, related_name="districts")
     name = models.CharField(max_length=100)
+    name_uz = models.CharField(max_length=100, blank=True, default="")
+    name_ru = models.CharField(max_length=100, blank=True, default="")
+    name_qaa = models.CharField(max_length=100, blank=True, default="")
 
     class Meta:
-        verbose_name = "Tuman/Shahar"
-        verbose_name_plural = "Tuman/Shaharlar"
+        verbose_name = _("Tuman/Shahar")
+        verbose_name_plural = _("Tuman/Shaharlar")
         unique_together = ("region", "name")
         ordering = ["name"]
 
     def __str__(self):
         return f"{self.region.name} — {self.name}"
+
+    def get_localized_name(self, lang: str = "uz") -> str:
+        return getattr(self, f"name_{lang}", "") or self.name_uz or self.name
 
 
 # ─────────────────────────────────────────────
@@ -43,17 +58,25 @@ class Organization(models.Model):
     logo = models.ImageField(upload_to="org_logos/", blank=True, null=True)
     website = models.URLField(blank=True, null=True)
     description = models.TextField(blank=True, null=True)
+    # Description'ning ko'p tilli versiyalari (AI bilan tarjima qilinadi)
+    description_uz = models.TextField(blank=True, default="")
+    description_ru = models.TextField(blank=True, default="")
+    description_qaa = models.TextField(blank=True, default="")
     region = models.ForeignKey(Region, on_delete=models.SET_NULL, null=True, blank=True)
     district = models.ForeignKey(District, on_delete=models.SET_NULL, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        verbose_name = "Tashkilot"
-        verbose_name_plural = "Tashkilotlar"
+        verbose_name = _("Tashkilot")
+        verbose_name_plural = _("Tashkilotlar")
         ordering = ["name"]
 
     def __str__(self):
         return self.name
+
+    def get_localized_description(self, lang: str = "uz") -> str:
+        return (getattr(self, f"description_{lang}", "") or
+                self.description_uz or self.description or "")
 
 
 # ─────────────────────────────────────────────
@@ -63,9 +86,9 @@ class Organization(models.Model):
 class UserManager(BaseUserManager):
     def create_user(self, phone_number, email=None, password=None, **extra_fields):
         if not phone_number:
-            raise ValueError("Telefon raqami majburiy")
+            raise ValueError(_("Telefon raqami majburiy"))
         if not email:
-            raise ValueError("Email majburiy")
+            raise ValueError(_("Email majburiy"))
         email = self.normalize_email(email)
         user = self.model(phone_number=phone_number, email=email, **extra_fields)
         user.set_password(password)
@@ -82,20 +105,20 @@ class UserManager(BaseUserManager):
 
 class User(AbstractBaseUser, PermissionsMixin):
     class Role(models.TextChoices):
-        JOB_SEEKER = "job_seeker", "Ish izlovchi"
-        EMPLOYER = "employer", "Ish beruvchi"
-        ADMIN = "admin", "Administrator"
+        JOB_SEEKER = "job_seeker", _("Ish izlovchi")
+        EMPLOYER = "employer", _("Ish beruvchi")
+        ADMIN = "admin", _("Administrator")
 
     phone_regex = RegexValidator(
         regex=r"^\+?998\d{9}$",
-        message="Telefon raqami +998XXXXXXXXX formatida bo'lishi kerak"
+        message=_("Telefon raqami +998XXXXXXXXX formatida bo'lishi kerak"),
     )
 
     phone_number = models.CharField(validators=[phone_regex], max_length=15, unique=True)
     email = models.EmailField(unique=True)
     avatar = models.ImageField(
         upload_to="user_avatars/", blank=True, null=True,
-        help_text="Profil rasmi (kvadrat shaklida tavsiya etiladi)",
+        help_text=_("Profil rasmi (kvadrat shaklida tavsiya etiladi)"),
     )
     role = models.CharField(max_length=20, choices=Role.choices)
     is_active = models.BooleanField(default=True)
@@ -114,8 +137,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     REQUIRED_FIELDS = ["email"]
 
     class Meta:
-        verbose_name = "Foydalanuvchi"
-        verbose_name_plural = "Foydalanuvchilar"
+        verbose_name = _("Foydalanuvchi")
+        verbose_name_plural = _("Foydalanuvchilar")
 
     def __str__(self):
         return f"{self.phone_number} ({self.get_role_display()})"
@@ -127,64 +150,94 @@ class User(AbstractBaseUser, PermissionsMixin):
 
 class Profession(models.Model):
     name = models.CharField(max_length=255, unique=True)
+    name_uz = models.CharField(max_length=255, blank=True, default="")
+    name_ru = models.CharField(max_length=255, blank=True, default="")
+    name_qaa = models.CharField(max_length=255, blank=True, default="")
 
     class Meta:
-        verbose_name = "Kasb/Lavozim"
-        verbose_name_plural = "Kasblar/Lavozimlar"
+        verbose_name = _("Kasb/Lavozim")
+        verbose_name_plural = _("Kasblar/Lavozimlar")
         ordering = ["name"]
 
     def __str__(self):
         return self.name
+
+    def get_localized_name(self, lang: str = "uz") -> str:
+        return getattr(self, f"name_{lang}", "") or self.name_uz or self.name
 
 
 class Skill(models.Model):
     name = models.CharField(max_length=255, unique=True)
+    name_uz = models.CharField(max_length=255, blank=True, default="")
+    name_ru = models.CharField(max_length=255, blank=True, default="")
+    name_qaa = models.CharField(max_length=255, blank=True, default="")
 
     class Meta:
-        verbose_name = "Ko'nikma"
-        verbose_name_plural = "Ko'nikmalar"
+        verbose_name = _("Ko'nikma")
+        verbose_name_plural = _("Ko'nikmalar")
         ordering = ["name"]
 
     def __str__(self):
         return self.name
+
+    def get_localized_name(self, lang: str = "uz") -> str:
+        return getattr(self, f"name_{lang}", "") or self.name_uz or self.name
 
 
 class University(models.Model):
     name = models.CharField(max_length=255, unique=True)
+    name_uz = models.CharField(max_length=255, blank=True, default="")
+    name_ru = models.CharField(max_length=255, blank=True, default="")
+    name_qaa = models.CharField(max_length=255, blank=True, default="")
 
     class Meta:
-        verbose_name = "O'quv muassasasi"
-        verbose_name_plural = "O'quv muassasalari"
+        verbose_name = _("O'quv muassasasi")
+        verbose_name_plural = _("O'quv muassasalari")
         ordering = ["name"]
 
     def __str__(self):
         return self.name
+
+    def get_localized_name(self, lang: str = "uz") -> str:
+        return getattr(self, f"name_{lang}", "") or self.name_uz or self.name
 
 
 class UniversityDirection(models.Model):
     university = models.ForeignKey(University, on_delete=models.CASCADE, related_name="directions")
     name = models.CharField(max_length=255)
+    name_uz = models.CharField(max_length=255, blank=True, default="")
+    name_ru = models.CharField(max_length=255, blank=True, default="")
+    name_qaa = models.CharField(max_length=255, blank=True, default="")
 
     class Meta:
-        verbose_name = "Yo'nalish"
-        verbose_name_plural = "Yo'nalishlar"
+        verbose_name = _("Yo'nalish")
+        verbose_name_plural = _("Yo'nalishlar")
         unique_together = ("university", "name")
         ordering = ["name"]
 
     def __str__(self):
         return f"{self.university.name} — {self.name}"
 
+    def get_localized_name(self, lang: str = "uz") -> str:
+        return getattr(self, f"name_{lang}", "") or self.name_uz or self.name
+
 
 class Industry(models.Model):
     name = models.CharField(max_length=255, unique=True)
+    name_uz = models.CharField(max_length=255, blank=True, default="")
+    name_ru = models.CharField(max_length=255, blank=True, default="")
+    name_qaa = models.CharField(max_length=255, blank=True, default="")
 
     class Meta:
-        verbose_name = "Soha"
-        verbose_name_plural = "Sohalar"
+        verbose_name = _("Soha")
+        verbose_name_plural = _("Sohalar")
         ordering = ["name"]
 
     def __str__(self):
         return self.name
+
+    def get_localized_name(self, lang: str = "uz") -> str:
+        return getattr(self, f"name_{lang}", "") or self.name_uz or self.name
 
 
 # ─────────────────────────────────────────────
@@ -235,6 +288,10 @@ class Resume(models.Model):
 
     profession = models.ForeignKey(Profession, on_delete=models.SET_NULL, null=True, blank=True, related_name="resumes")
     profession_detail = models.TextField(blank=True)
+    # Profession_detail'ning ko'p tilli versiyalari (AI bilan tarjima qilinadi)
+    profession_detail_uz = models.TextField(blank=True, default="")
+    profession_detail_ru = models.TextField(blank=True, default="")
+    profession_detail_qaa = models.TextField(blank=True, default="")
     career_level = models.CharField(max_length=20, choices=CareerLevel.choices)
 
     expected_salary = models.PositiveBigIntegerField(null=True, blank=True)
@@ -255,8 +312,8 @@ class Resume(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        verbose_name = "Rezyume"
-        verbose_name_plural = "Rezyumelar"
+        verbose_name = _("Rezyume")
+        verbose_name_plural = _("Rezyumelar")
         ordering = ["-updated_at"]
 
     def __str__(self):
@@ -299,8 +356,8 @@ class ResumeLanguage(models.Model):
 
     class Meta:
         unique_together = ("resume", "language")
-        verbose_name = "Rezyume tili"
-        verbose_name_plural = "Rezyume tillari"
+        verbose_name = _("Rezyume tili")
+        verbose_name_plural = _("Rezyume tillari")
 
     def __str__(self):
         return f"{self.get_language_display()} — {self.level}"
@@ -319,8 +376,8 @@ class WorkExperience(models.Model):
 
     class Meta:
         ordering = ["-start_year", "-start_month"]
-        verbose_name = "Ish tajribasi"
-        verbose_name_plural = "Ish tajribalari"
+        verbose_name = _("Ish tajribasi")
+        verbose_name_plural = _("Ish tajribalari")
 
     def __str__(self):
         return f"{self.position} @ {self.organization_name}"
@@ -342,8 +399,8 @@ class Education(models.Model):
     is_studying = models.BooleanField(default=False)
 
     class Meta:
-        verbose_name = "Ta'lim"
-        verbose_name_plural = "Ta'limlar"
+        verbose_name = _("Ta'lim")
+        verbose_name_plural = _("Ta'limlar")
         ordering = ["-start_year"]
 
     def __str__(self):
@@ -358,8 +415,8 @@ class Certificate(models.Model):
     file = models.FileField(upload_to="certificates/", blank=True, null=True)
 
     class Meta:
-        verbose_name = "Sertifikat"
-        verbose_name_plural = "Sertifikatlar"
+        verbose_name = _("Sertifikat")
+        verbose_name_plural = _("Sertifikatlar")
         ordering = ["-issued_date"]
 
     def __str__(self):
@@ -427,6 +484,10 @@ class Vacancy(models.Model):
     profession = models.ForeignKey(Profession, on_delete=models.SET_NULL, null=True, blank=True, related_name="vacancies")
     industry = models.ForeignKey(Industry, on_delete=models.SET_NULL, null=True, blank=True)
     description = models.TextField(blank=True)
+    # Description'ning ko'p tilli versiyalari (AI bilan tarjima qilinadi)
+    description_uz = models.TextField(blank=True, default="")
+    description_ru = models.TextField(blank=True, default="")
+    description_qaa = models.TextField(blank=True, default="")
 
     region = models.ForeignKey(Region, on_delete=models.SET_NULL, null=True, blank=True)
     district = models.ForeignKey(District, on_delete=models.SET_NULL, null=True, blank=True)
@@ -455,8 +516,8 @@ class Vacancy(models.Model):
     expires_at = models.DateField(null=True, blank=True)
 
     class Meta:
-        verbose_name = "Vakansiya"
-        verbose_name_plural = "Vakansiyalar"
+        verbose_name = _("Vakansiya")
+        verbose_name_plural = _("Vakansiyalar")
         ordering = ["-created_at"]
 
     def __str__(self):
@@ -487,8 +548,8 @@ class VacancyLanguageRequirement(models.Model):
 
     class Meta:
         unique_together = ("vacancy", "language")
-        verbose_name = "Vakansiya til talabi"
-        verbose_name_plural = "Vakansiya til talablari"
+        verbose_name = _("Vakansiya til talabi")
+        verbose_name_plural = _("Vakansiya til talablari")
 
     def __str__(self):
         return f"{self.get_language_display()} — {self.min_level}+"
@@ -505,8 +566,8 @@ class VacancyLike(models.Model):
 
     class Meta:
         unique_together = ("user", "vacancy")
-        verbose_name = "Saqlangan vakansiya"
-        verbose_name_plural = "Saqlangan vakansiyalar"
+        verbose_name = _("Saqlangan vakansiya")
+        verbose_name_plural = _("Saqlangan vakansiyalar")
         ordering = ["-created_at"]
 
     def __str__(self):
@@ -536,13 +597,13 @@ class Application(models.Model):
     direction = models.CharField(max_length=10, choices=Direction.choices, default=Direction.APPLIED)
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
     cover_letter = models.TextField(blank=True)
-    note = models.TextField(blank=True, help_text="Ish beruvchi izohi")
+    note = models.TextField(blank=True, help_text=_("Ish beruvchi izohi"))
     applied_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        verbose_name = "Ariza/Taklif"
-        verbose_name_plural = "Arizalar/Takliflar"
+        verbose_name = _("Ariza/Taklif")
+        verbose_name_plural = _("Arizalar/Takliflar")
         unique_together = ("vacancy", "resume", "direction")
         ordering = ["-applied_at"]
 
@@ -571,8 +632,8 @@ class OTPCode(models.Model):
     expires_at = models.DateTimeField()
 
     class Meta:
-        verbose_name = "OTP kod"
-        verbose_name_plural = "OTP kodlar"
+        verbose_name = _("OTP kod")
+        verbose_name_plural = _("OTP kodlar")
         ordering = ["-created_at"]
         indexes = [
             models.Index(fields=["email", "code", "is_used"]),
@@ -594,8 +655,8 @@ class ResumeView(models.Model):
     viewed_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        verbose_name = "Rezyume ko'rishi"
-        verbose_name_plural = "Rezyume ko'rishlari"
+        verbose_name = _("Rezyume ko'rishi")
+        verbose_name_plural = _("Rezyume ko'rishlari")
         ordering = ["-viewed_at"]
         indexes = [
             models.Index(fields=["resume", "-viewed_at"]),
@@ -623,7 +684,7 @@ class Notification(models.Model):
         User,
         on_delete=models.CASCADE,
         related_name="notifications",
-        help_text="Bildirishnoma yuboriladigan foydalanuvchi",
+        help_text=_("Bildirishnoma yuboriladigan foydalanuvchi"),
     )
     notification_type = models.CharField(max_length=40, choices=Type.choices)
     title = models.CharField(max_length=255)
@@ -647,8 +708,8 @@ class Notification(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        verbose_name = "Bildirishnoma"
-        verbose_name_plural = "Bildirishnomalar"
+        verbose_name = _("Bildirishnoma")
+        verbose_name_plural = _("Bildirishnomalar")
         ordering = ["-created_at"]
         indexes = [
             models.Index(fields=["user", "-created_at"]),
@@ -688,15 +749,15 @@ class Report(models.Model):
     reporter = models.ForeignKey(
         User, on_delete=models.SET_NULL, null=True,
         related_name="submitted_reports",
-        help_text="Shikoyat yuborgan foydalanuvchi",
+        help_text=_("Shikoyat yuborgan foydalanuvchi"),
     )
     target_type = models.CharField(max_length=20, choices=TargetType.choices)
-    target_id = models.PositiveBigIntegerField(help_text="Shikoyat qilinayotgan ob'ekt ID si")
+    target_id = models.PositiveBigIntegerField(help_text=_("Shikoyat qilinayotgan ob'ekt ID si"))
     reason = models.CharField(max_length=20, choices=Reason.choices)
-    description = models.TextField(blank=True, help_text="Qo'shimcha tushuntirish")
+    description = models.TextField(blank=True, help_text=_("Qo'shimcha tushuntirish"))
 
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
-    resolution_note = models.TextField(blank=True, help_text="Admin javobi/qarori")
+    resolution_note = models.TextField(blank=True, help_text=_("Admin javobi/qarori"))
     resolved_by = models.ForeignKey(
         User, on_delete=models.SET_NULL, null=True, blank=True,
         related_name="resolved_reports",
@@ -705,8 +766,8 @@ class Report(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        verbose_name = "Shikoyat"
-        verbose_name_plural = "Shikoyatlar"
+        verbose_name = _("Shikoyat")
+        verbose_name_plural = _("Shikoyatlar")
         ordering = ["-created_at"]
         indexes = [
             models.Index(fields=["status", "-created_at"]),

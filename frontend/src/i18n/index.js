@@ -15,9 +15,11 @@ import LanguageDetector from 'i18next-browser-languagedetector'
 
 import uz from './locales/uz.json'
 import ru from './locales/ru.json'
+import qaa from './locales/qaa.json'
 
 export const SUPPORTED_LANGUAGES = [
   { code: 'uz', name: "O'zbek", flag: '🇺🇿' },
+  { code: 'qaa', name: 'Qaraqalpaqsha', flag: '🇺🇿' },
   { code: 'ru', name: 'Русский', flag: '🇷🇺' },
 ]
 
@@ -28,9 +30,10 @@ i18n
     resources: {
       uz: { translation: uz },
       ru: { translation: ru },
+      qaa: { translation: qaa },
     },
     fallbackLng: 'uz',
-    supportedLngs: ['uz', 'ru'],
+    supportedLngs: ['uz', 'ru', 'qaa'],
     nonExplicitSupportedLngs: true,
     debug: false,
     interpolation: {

@@ -4,6 +4,7 @@ import random
 from django.conf import settings
 from django.core.mail import send_mail
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 from rest_framework_simplejwt.tokens import RefreshToken
 
@@ -19,53 +20,128 @@ from .models import (
 
 
 # ──────────────────────────────────────────────
+# I18N HELPER
+# ──────────────────────────────────────────────
+# Foydalanuvchi tilini Accept-Language header asosida aniqlash va name/description
+# field'larni o'sha tilda qaytarish uchun helper.
+
+SUPPORTED_LANGS = ("uz", "ru", "qaa")
+
+
+def resolve_request_lang(context) -> str:
+    """Request context'dan tilni aniqlash. Default: 'uz'."""
+    request = context.get("request") if context else None
+    lang = getattr(request, "LANGUAGE_CODE", None) or "uz"
+    # Accept-Language `ru-RU` ko'rinishida kelishi mumkin — base'ni olish
+    lang = (lang or "uz").split("-")[0].lower()
+    return lang if lang in SUPPORTED_LANGS else "uz"
+
+
+def localized_value(obj, base_field: str, lang: str) -> str:
+    """Tilga qarab name_uz / name_ru / name_qaa qaytaradi.
+
+    Fallback: lang -> uz -> asl maydon (name/description) -> ""
+    """
+    val = getattr(obj, f"{base_field}_{lang}", "") or ""
+    if val:
+        return val
+    val = getattr(obj, f"{base_field}_uz", "") or ""
+    if val:
+        return val
+    return getattr(obj, base_field, "") or ""
+
+
+# ──────────────────────────────────────────────
 # REFERENCE
 # ──────────────────────────────────────────────
 
 class RegionSerializer(serializers.ModelSerializer):
+    name = serializers.SerializerMethodField()
+
     class Meta:
         model = Region
         fields = ["id", "name"]
 
+    def get_name(self, obj):
+        return localized_value(obj, "name", resolve_request_lang(self.context))
+
 
 class DistrictSerializer(serializers.ModelSerializer):
-    region_name = serializers.CharField(source="region.name", read_only=True)
+    name = serializers.SerializerMethodField()
+    region_name = serializers.SerializerMethodField()
 
     class Meta:
         model = District
         fields = ["id", "name", "region", "region_name"]
 
+    def get_name(self, obj):
+        return localized_value(obj, "name", resolve_request_lang(self.context))
+
+    def get_region_name(self, obj):
+        if not obj.region_id:
+            return ""
+        return localized_value(obj.region, "name", resolve_request_lang(self.context))
+
 
 class ProfessionSerializer(serializers.ModelSerializer):
+    name = serializers.SerializerMethodField()
+
     class Meta:
         model = Profession
         fields = ["id", "name"]
 
+    def get_name(self, obj):
+        return localized_value(obj, "name", resolve_request_lang(self.context))
+
 
 class SkillSerializer(serializers.ModelSerializer):
+    name = serializers.SerializerMethodField()
+
     class Meta:
         model = Skill
         fields = ["id", "name"]
 
+    def get_name(self, obj):
+        return localized_value(obj, "name", resolve_request_lang(self.context))
+
 
 class UniversitySerializer(serializers.ModelSerializer):
+    name = serializers.SerializerMethodField()
+
     class Meta:
         model = University
         fields = ["id", "name"]
 
+    def get_name(self, obj):
+        return localized_value(obj, "name", resolve_request_lang(self.context))
+
 
 class UniversityDirectionSerializer(serializers.ModelSerializer):
-    university_name = serializers.CharField(source="university.name", read_only=True)
+    name = serializers.SerializerMethodField()
+    university_name = serializers.SerializerMethodField()
 
     class Meta:
         model = UniversityDirection
         fields = ["id", "name", "university", "university_name"]
 
+    def get_name(self, obj):
+        return localized_value(obj, "name", resolve_request_lang(self.context))
+
+    def get_university_name(self, obj):
+        if not obj.university_id:
+            return ""
+        return localized_value(obj.university, "name", resolve_request_lang(self.context))
+
 
 class IndustrySerializer(serializers.ModelSerializer):
+    name = serializers.SerializerMethodField()
+
     class Meta:
         model = Industry
         fields = ["id", "name"]
+
+    def get_name(self, obj):
+        return localized_value(obj, "name", resolve_request_lang(self.context))
 
 
 # ──────────────────────────────────────────────
@@ -73,8 +149,8 @@ class IndustrySerializer(serializers.ModelSerializer):
 # ──────────────────────────────────────────────
 
 class OrganizationListSerializer(serializers.ModelSerializer):
-    region_name = serializers.CharField(source="region.name", read_only=True)
-    district_name = serializers.CharField(source="district.name", read_only=True)
+    region_name = serializers.SerializerMethodField()
+    district_name = serializers.SerializerMethodField()
     vacancies_count = serializers.SerializerMethodField()
 
     class Meta:
@@ -85,13 +161,24 @@ class OrganizationListSerializer(serializers.ModelSerializer):
             "vacancies_count", "created_at",
         ]
 
+    def get_region_name(self, obj):
+        if not obj.region_id:
+            return ""
+        return localized_value(obj.region, "name", resolve_request_lang(self.context))
+
+    def get_district_name(self, obj):
+        if not obj.district_id:
+            return ""
+        return localized_value(obj.district, "name", resolve_request_lang(self.context))
+
     def get_vacancies_count(self, obj):
         return obj.vacancies.filter(is_active=True).count()
 
 
 class OrganizationDetailSerializer(serializers.ModelSerializer):
-    region_name = serializers.CharField(source="region.name", read_only=True)
-    district_name = serializers.CharField(source="district.name", read_only=True)
+    region_name = serializers.SerializerMethodField()
+    district_name = serializers.SerializerMethodField()
+    description = serializers.SerializerMethodField()
     active_vacancies_count = serializers.SerializerMethodField()
     active_vacancies = serializers.SerializerMethodField()
 
@@ -102,6 +189,19 @@ class OrganizationDetailSerializer(serializers.ModelSerializer):
             "region", "region_name", "district", "district_name",
             "active_vacancies_count", "active_vacancies", "created_at",
         ]
+
+    def get_region_name(self, obj):
+        if not obj.region_id:
+            return ""
+        return localized_value(obj.region, "name", resolve_request_lang(self.context))
+
+    def get_district_name(self, obj):
+        if not obj.district_id:
+            return ""
+        return localized_value(obj.district, "name", resolve_request_lang(self.context))
+
+    def get_description(self, obj):
+        return localized_value(obj, "description", resolve_request_lang(self.context))
 
     def get_active_vacancies_count(self, obj):
         return obj.vacancies.filter(is_active=True).count()
@@ -141,7 +241,7 @@ class WorkExperienceSerializer(serializers.ModelSerializer):
         if not attrs.get("is_current"):
             if not attrs.get("end_year") or not attrs.get("end_month"):
                 raise serializers.ValidationError(
-                    "Hozirda ishlamayotgan bo'lsangiz, end_month va end_year majburiy"
+                    _("Hozirda ishlamayotgan bo'lsangiz, end_month va end_year majburiy")
                 )
         return attrs
 
@@ -172,9 +272,9 @@ class CertificateSerializer(serializers.ModelSerializer):
 # ──────────────────────────────────────────────
 
 class ResumeListSerializer(serializers.ModelSerializer):
-    profession_name = serializers.CharField(source="profession.name", read_only=True)
-    region_name = serializers.CharField(source="region.name", read_only=True)
-    district_name = serializers.CharField(source="district.name", read_only=True)
+    profession_name = serializers.SerializerMethodField()
+    region_name = serializers.SerializerMethodField()
+    district_name = serializers.SerializerMethodField()
     full_name = serializers.SerializerMethodField()
     skills = SkillSerializer(many=True, read_only=True)
 
@@ -193,6 +293,21 @@ class ResumeListSerializer(serializers.ModelSerializer):
     def get_full_name(self, obj):
         return f"{obj.last_name} {obj.first_name}".strip()
 
+    def get_profession_name(self, obj):
+        if not obj.profession_id:
+            return ""
+        return localized_value(obj.profession, "name", resolve_request_lang(self.context))
+
+    def get_region_name(self, obj):
+        if not obj.region_id:
+            return ""
+        return localized_value(obj.region, "name", resolve_request_lang(self.context))
+
+    def get_district_name(self, obj):
+        if not obj.district_id:
+            return ""
+        return localized_value(obj.district, "name", resolve_request_lang(self.context))
+
 
 class ResumeDetailSerializer(serializers.ModelSerializer):
     profession = ProfessionSerializer(read_only=True)
@@ -203,6 +318,7 @@ class ResumeDetailSerializer(serializers.ModelSerializer):
     work_experiences = WorkExperienceSerializer(many=True, read_only=True)
     educations = EducationSerializer(many=True, read_only=True)
     certificates = CertificateSerializer(many=True, read_only=True)
+    profession_detail = serializers.SerializerMethodField()
 
     gender_display = serializers.CharField(source="get_gender_display", read_only=True)
     career_level_display = serializers.CharField(source="get_career_level_display", read_only=True)
@@ -229,6 +345,9 @@ class ResumeDetailSerializer(serializers.ModelSerializer):
             "work_experiences", "educations", "certificates",
             "is_published", "created_at", "updated_at",
         ]
+
+    def get_profession_detail(self, obj):
+        return localized_value(obj, "profession_detail", resolve_request_lang(self.context))
 
 
 class ResumeWriteSerializer(serializers.ModelSerializer):
@@ -337,11 +456,11 @@ class VacancyLanguageSerializer(serializers.ModelSerializer):
 
 
 class VacancyListSerializer(serializers.ModelSerializer):
-    organization_name = serializers.CharField(source="organization.name", read_only=True)
+    organization_name = serializers.SerializerMethodField()
     organization_logo = serializers.ImageField(source="organization.logo", read_only=True)
-    profession_name = serializers.CharField(source="profession.name", read_only=True)
-    region_name = serializers.CharField(source="region.name", read_only=True)
-    district_name = serializers.CharField(source="district.name", read_only=True)
+    profession_name = serializers.SerializerMethodField()
+    region_name = serializers.SerializerMethodField()
+    district_name = serializers.SerializerMethodField()
     is_liked = serializers.SerializerMethodField()
     applications_count = serializers.IntegerField(source="applications.count", read_only=True)
 
@@ -357,6 +476,25 @@ class VacancyListSerializer(serializers.ModelSerializer):
             "is_liked", "created_at",
         ]
 
+    def get_organization_name(self, obj):
+        # Tashkilot nomi tarjima qilinmaydi (brend), shu sababli oddiy nom.
+        return obj.organization.name if obj.organization_id else ""
+
+    def get_profession_name(self, obj):
+        if not obj.profession_id:
+            return ""
+        return localized_value(obj.profession, "name", resolve_request_lang(self.context))
+
+    def get_region_name(self, obj):
+        if not obj.region_id:
+            return ""
+        return localized_value(obj.region, "name", resolve_request_lang(self.context))
+
+    def get_district_name(self, obj):
+        if not obj.district_id:
+            return ""
+        return localized_value(obj.district, "name", resolve_request_lang(self.context))
+
     def get_is_liked(self, obj):
         request = self.context.get("request")
         if request and request.user.is_authenticated:
@@ -366,10 +504,11 @@ class VacancyListSerializer(serializers.ModelSerializer):
 
 class VacancyDetailSerializer(serializers.ModelSerializer):
     organization = OrganizationListSerializer(read_only=True)
-    profession_name = serializers.CharField(source="profession.name", read_only=True)
-    industry_name = serializers.CharField(source="industry.name", read_only=True)
-    region_name = serializers.CharField(source="region.name", read_only=True)
-    district_name = serializers.CharField(source="district.name", read_only=True)
+    profession_name = serializers.SerializerMethodField()
+    industry_name = serializers.SerializerMethodField()
+    region_name = serializers.SerializerMethodField()
+    district_name = serializers.SerializerMethodField()
+    description = serializers.SerializerMethodField()
     language_requirements = VacancyLanguageSerializer(many=True, read_only=True)
     is_liked = serializers.SerializerMethodField()
     has_applied = serializers.SerializerMethodField()
@@ -403,6 +542,29 @@ class VacancyDetailSerializer(serializers.ModelSerializer):
             "is_liked", "has_applied",
             "created_at", "updated_at", "expires_at",
         ]
+
+    def get_profession_name(self, obj):
+        if not obj.profession_id:
+            return ""
+        return localized_value(obj.profession, "name", resolve_request_lang(self.context))
+
+    def get_industry_name(self, obj):
+        if not obj.industry_id:
+            return ""
+        return localized_value(obj.industry, "name", resolve_request_lang(self.context))
+
+    def get_region_name(self, obj):
+        if not obj.region_id:
+            return ""
+        return localized_value(obj.region, "name", resolve_request_lang(self.context))
+
+    def get_district_name(self, obj):
+        if not obj.district_id:
+            return ""
+        return localized_value(obj.district, "name", resolve_request_lang(self.context))
+
+    def get_description(self, obj):
+        return localized_value(obj, "description", resolve_request_lang(self.context))
 
     def get_is_liked(self, obj):
         request = self.context.get("request")
@@ -448,11 +610,11 @@ class ApplicationCreateSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         request = self.context.get("request")
         if not request or not request.user.is_authenticated:
-            raise serializers.ValidationError("Avtorizatsiya talab qilinadi")
+            raise serializers.ValidationError(_("Avtorizatsiya talab qilinadi"))
 
         resume = getattr(request.user, "resume", None)
         if not resume:
-            raise serializers.ValidationError("Avval rezyume yarating")
+            raise serializers.ValidationError(_("Avval rezyume yarating"))
 
         vacancy = attrs["vacancy"]
         if Application.objects.filter(
@@ -460,7 +622,7 @@ class ApplicationCreateSerializer(serializers.ModelSerializer):
             resume=resume,
             direction=Application.Direction.APPLIED,
         ).exists():
-            raise serializers.ValidationError("Siz allaqachon ushbu vakansiyaga ariza yuborgansiz")
+            raise serializers.ValidationError(_("Siz allaqachon ushbu vakansiyaga ariza yuborgansiz"))
 
         attrs["resume"] = resume
         attrs["direction"] = Application.Direction.APPLIED
@@ -690,7 +852,7 @@ class OTPSendSerializer(serializers.Serializer):
         if last and (timezone.now() - last.created_at).total_seconds() < cooldown:
             wait = int(cooldown - (timezone.now() - last.created_at).total_seconds())
             raise serializers.ValidationError(
-                {"email": f"Iltimos, {wait} soniyadan so'ng qayta urinib ko'ring"}
+                {"email": _("Iltimos, %(seconds)d soniyadan so'ng qayta urinib ko'ring") % {"seconds": wait}}
             )
         return attrs
 
@@ -721,7 +883,7 @@ class OTPVerifySerializer(serializers.Serializer):
         ).order_by("-created_at").first()
 
         if not otp:
-            raise serializers.ValidationError({"code": "Kod noto'g'ri yoki muddati o'tgan"})
+            raise serializers.ValidationError({"code": _("Kod noto'g'ri yoki muddati o'tgan")})
 
         attrs["otp"] = otp
         return attrs
@@ -751,7 +913,7 @@ class _BaseRegisterSerializer(serializers.Serializer):
         attrs["email"] = email
 
         if attrs["password"] != attrs["password_confirm"]:
-            raise serializers.ValidationError({"password_confirm": "Parollar mos kelmadi"})
+            raise serializers.ValidationError({"password_confirm": _("Parollar mos kelmadi")})
 
         otp = OTPCode.objects.filter(
             email=email,
@@ -761,13 +923,13 @@ class _BaseRegisterSerializer(serializers.Serializer):
         ).order_by("-created_at").first()
 
         if not otp:
-            raise serializers.ValidationError({"code": "Kod noto'g'ri yoki muddati o'tgan"})
+            raise serializers.ValidationError({"code": _("Kod noto'g'ri yoki muddati o'tgan")})
         attrs["otp"] = otp
 
         if User.objects.filter(phone_number=phone).exists():
-            raise serializers.ValidationError({"phone_number": "Bu telefon raqami allaqachon ro'yxatdan o'tgan"})
+            raise serializers.ValidationError({"phone_number": _("Bu telefon raqami allaqachon ro'yxatdan o'tgan")})
         if User.objects.filter(email=email).exists():
-            raise serializers.ValidationError({"email": "Bu email allaqachon ro'yxatdan o'tgan"})
+            raise serializers.ValidationError({"email": _("Bu email allaqachon ro'yxatdan o'tgan")})
 
         return attrs
 
@@ -842,7 +1004,7 @@ class LoginSerializer(serializers.Serializer):
 
         if not email and not phone:
             raise serializers.ValidationError(
-                {"email": "Email yoki telefon raqami kiritilishi shart"}
+                {"email": _("Email yoki telefon raqami kiritilishi shart")}
             )
 
         user = None
@@ -850,7 +1012,7 @@ class LoginSerializer(serializers.Serializer):
             user = User.objects.filter(email__iexact=email).first()
             if not user:
                 raise serializers.ValidationError(
-                    {"email": "Bu email bilan foydalanuvchi topilmadi"}
+                    {"email": _("Bu email bilan foydalanuvchi topilmadi")}
                 )
         else:
             if not phone.startswith("+"):
@@ -858,14 +1020,14 @@ class LoginSerializer(serializers.Serializer):
             user = User.objects.filter(phone_number=phone).first()
             if not user:
                 raise serializers.ValidationError(
-                    {"phone_number": "Bu telefon raqami bilan foydalanuvchi topilmadi"}
+                    {"phone_number": _("Bu telefon raqami bilan foydalanuvchi topilmadi")}
                 )
 
         if not user.check_password(attrs["password"]):
-            raise serializers.ValidationError({"password": "Parol noto'g'ri"})
+            raise serializers.ValidationError({"password": _("Parol noto'g'ri")})
 
         if not user.is_active:
-            raise serializers.ValidationError({"detail": "Akkaunt bloklangan"})
+            raise serializers.ValidationError({"detail": _("Akkaunt bloklangan")})
 
         attrs["user"] = user
         return attrs
@@ -970,13 +1132,13 @@ class EmployerVacancyWriteSerializer(serializers.ModelSerializer):
         st = attrs.get("salary_to")
         if sf and st and sf > st:
             raise serializers.ValidationError(
-                {"salary_to": "salary_to salary_from dan kichik bo'lmasligi kerak"}
+                {"salary_to": _("salary_to salary_from dan kichik bo'lmasligi kerak")}
             )
         af = attrs.get("age_from")
         at = attrs.get("age_to")
         if af and at and af > at:
             raise serializers.ValidationError(
-                {"age_to": "age_to age_from dan kichik bo'lmasligi kerak"}
+                {"age_to": _("age_to age_from dan kichik bo'lmasligi kerak")}
             )
         return attrs
 
@@ -1106,19 +1268,19 @@ class InvitationCreateSerializer(serializers.ModelSerializer):
         # Vakansiya egasi tekshiruvi
         if vacancy.employer != request.user:
             raise serializers.ValidationError(
-                {"vacancy": "Bu vakansiya sizga tegishli emas"}
+                {"vacancy": _("Bu vakansiya sizga tegishli emas")}
             )
 
         # Vakansiya faolligi
         if not vacancy.is_active:
             raise serializers.ValidationError(
-                {"vacancy": "Yopilgan vakansiyaga taklif yuborish mumkin emas"}
+                {"vacancy": _("Yopilgan vakansiyaga taklif yuborish mumkin emas")}
             )
 
         # Rezyume nashr etilganligi
         if not resume.is_published:
             raise serializers.ValidationError(
-                {"resume": "Rezyume nashr etilmagan"}
+                {"resume": _("Rezyume nashr etilmagan")}
             )
 
         # Takror tekshiruvi
@@ -1128,7 +1290,7 @@ class InvitationCreateSerializer(serializers.ModelSerializer):
             direction=Application.Direction.INVITED,
         ).exists():
             raise serializers.ValidationError(
-                "Siz bu rezyumega ushbu vakansiya uchun allaqachon taklif yuborgansiz"
+                _("Siz bu rezyumega ushbu vakansiya uchun allaqachon taklif yuborgansiz")
             )
 
         attrs["direction"] = Application.Direction.INVITED
@@ -1222,7 +1384,7 @@ class ApplicationStatusUpdateSerializer(serializers.ModelSerializer):
         }
         if value not in allowed:
             raise serializers.ValidationError(
-                f"Bu status uchun ruxsat yo'q. Ruxsat etilganlari: {', '.join(allowed)}"
+                _("Bu status uchun ruxsat yo'q. Ruxsat etilganlari: %(allowed)s") % {"allowed": ", ".join(allowed)}
             )
         return value
 
@@ -1304,7 +1466,7 @@ class PasswordResetRequestSerializer(serializers.Serializer):
         if not User.objects.filter(email=value).exists():
             # Xavfsizlik: emailning mavjudligini bildirmaslik mumkin,
             # lekin diplom UX uchun aniq xato qaytaramiz
-            raise serializers.ValidationError("Bunday email ro'yxatdan o'tmagan")
+            raise serializers.ValidationError(_("Bunday email ro'yxatdan o'tmagan"))
         return value
 
     def validate(self, attrs):
@@ -1319,7 +1481,7 @@ class PasswordResetRequestSerializer(serializers.Serializer):
         if last and (timezone.now() - last.created_at).total_seconds() < cooldown:
             wait = int(cooldown - (timezone.now() - last.created_at).total_seconds())
             raise serializers.ValidationError(
-                {"email": f"Iltimos, {wait} soniyadan so'ng qayta urinib ko'ring"}
+                {"email": _("Iltimos, %(seconds)d soniyadan so'ng qayta urinib ko'ring") % {"seconds": wait}}
             )
         return attrs
 
@@ -1371,7 +1533,7 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         if attrs["new_password"] != attrs["new_password_confirm"]:
-            raise serializers.ValidationError({"new_password_confirm": "Parollar mos kelmadi"})
+            raise serializers.ValidationError({"new_password_confirm": _("Parollar mos kelmadi")})
 
         otp = (
             OTPCode.objects
@@ -1386,12 +1548,12 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
             .first()
         )
         if not otp:
-            raise serializers.ValidationError({"code": "Kod noto'g'ri yoki muddati o'tgan"})
+            raise serializers.ValidationError({"code": _("Kod noto'g'ri yoki muddati o'tgan")})
 
         try:
             user = User.objects.get(email=attrs["email"])
         except User.DoesNotExist:
-            raise serializers.ValidationError({"email": "Foydalanuvchi topilmadi"})
+            raise serializers.ValidationError({"email": _("Foydalanuvchi topilmadi")})
 
         attrs["otp"] = otp
         attrs["user"] = user
@@ -1453,17 +1615,17 @@ class PasswordChangeSerializer(serializers.Serializer):
     def validate_old_password(self, value):
         user = self.context["request"].user
         if not user.check_password(value):
-            raise serializers.ValidationError("Eski parol noto'g'ri")
+            raise serializers.ValidationError(_("Eski parol noto'g'ri"))
         return value
 
     def validate(self, attrs):
         if attrs["new_password"] != attrs["new_password_confirm"]:
             raise serializers.ValidationError(
-                {"new_password_confirm": "Yangi parollar mos kelmadi"}
+                {"new_password_confirm": _("Yangi parollar mos kelmadi")}
             )
         if attrs["old_password"] == attrs["new_password"]:
             raise serializers.ValidationError(
-                {"new_password": "Yangi parol eskisidan farq qilishi kerak"}
+                {"new_password": _("Yangi parol eskisidan farq qilishi kerak")}
             )
         return attrs
 

@@ -1,9 +1,11 @@
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { Heart, MapPin, Building2 } from 'lucide-react'
 import { formatSalary, formatDate } from '@/lib/format'
 import { cn } from '@/lib/cn'
 
 function VacancyCard({ vacancy }) {
+  const { t } = useTranslation()
   const {
     id,
     profession_name,
@@ -51,7 +53,7 @@ function VacancyCard({ vacancy }) {
             onClick={(e) => {
               e.preventDefault()
             }}
-            aria-label="Sevimlilarga qo'shish"
+            aria-label={t('vacancy_card.like_aria')}
             className={cn(
               'p-2 rounded-full hover:bg-gray-50 transition',
               is_liked ? 'text-red-500' : 'text-gray-300 hover:text-red-500'
@@ -75,8 +77,8 @@ function VacancyCard({ vacancy }) {
       </div>
 
       <div className="mt-4 pt-4 border-t border-gray-100 flex justify-end gap-4 text-xs text-gray-400">
-        <span>ID: {id}</span>
-        <span>E'lon qilingan: {formatDate(created_at)}</span>
+        <span>{t('vacancy_card.id_label')}: {id}</span>
+        <span>{t('vacancy_card.posted')}: {formatDate(created_at)}</span>
       </div>
     </Link>
   )

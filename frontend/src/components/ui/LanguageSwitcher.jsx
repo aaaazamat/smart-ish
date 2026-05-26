@@ -43,7 +43,7 @@ function LanguageSwitcher({ compact = false }) {
         className={`inline-flex items-center gap-1.5 rounded-lg
           ${compact ? 'px-2 py-1 text-xs' : 'px-3 py-1.5 text-sm'}
           font-medium text-gray-700 hover:bg-gray-100 transition`}
-        aria-label="Tilni o'zgartirish"
+        aria-label={i18n.t('common.change_language')}
         aria-expanded={open}
       >
         <Globe className={compact ? 'w-3.5 h-3.5' : 'w-4 h-4'} />
