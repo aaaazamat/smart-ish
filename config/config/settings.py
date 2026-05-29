@@ -402,11 +402,11 @@ CACHE_TTL_VACANCY_DETAIL = 180    # vakansiya detali — 3 daqiqa
 # ──────────────────────────────────────────────
 GEMINI_API_KEY = config("GEMINI_API_KEY", default="")
 
-# Tarjima uchun ALOHIDA Gemini kaliti (ixtiyoriy).
-# Agar berilsa, translation_service shu kalitni ishlatadi — shunda ko'p tarjima
-# so'rovlari chatbot/match (asosiy GEMINI_API_KEY) quota'siga ta'sir qilmaydi.
+# Tarjima uchun ALOHIDA Gemini kalit(lar)i — vergul bilan bir nechta berish mumkin.
+# Bir kalit kunlik limitga yetsa (429), translation_service avtomatik keyingisiga
+# o'tadi (failover). Shunda jami quota = kalitlar soni × kunlik limit.
 # Bo'sh bo'lsa, asosiy GEMINI_API_KEY ishlatiladi (fallback).
-GEMINI_API_KEY_TRANSLATE = config("GEMINI_API_KEY_TRANSLATE", default="")
+GEMINI_API_KEY_TRANSLATE = config("GEMINI_API_KEY_TRANSLATE", default="", cast=Csv())
 
 # Tarjima uchun model. gemini-2.5-flash bepul tier'da kuniga atigi 20 so'rov beradi,
 # shuning uchun tarjima (oddiy vazifa) uchun gemini-2.0-flash-lite ishlatamiz —

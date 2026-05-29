@@ -13,7 +13,6 @@ Fallback: AI xato bersa, asl matn qaytariladi (logger.warning).
 """
 import hashlib
 import logging
-import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from django.conf import settings
@@ -24,10 +23,21 @@ from .ai_services import _call_gemini, AIServiceError
 logger = logging.getLogger(__name__)
 
 
-def _translate_api_key() -> str:
-    """Tarjima uchun alohida kalit (bo'lsa), aks holda asosiy GEMINI_API_KEY."""
-    return (getattr(settings, "GEMINI_API_KEY_TRANSLATE", "") or
-            getattr(settings, "GEMINI_API_KEY", ""))
+def _translate_keys() -> list:
+    """Tarjima uchun kalitlar ro'yxati (failover uchun).
+
+    GEMINI_API_KEY_TRANSLATE — ro'yxat (Csv) yoki string bo'lishi mumkin.
+    Bo'sh bo'lsa, asosiy GEMINI_API_KEY ga qaytadi.
+    """
+    keys = getattr(settings, "GEMINI_API_KEY_TRANSLATE", []) or []
+    if isinstance(keys, str):
+        keys = [keys]
+    keys = [k.strip() for k in keys if k and k.strip()]
+    if not keys:
+        main = getattr(settings, "GEMINI_API_KEY", "")
+        if main:
+            keys = [main]
+    return keys
 
 # Til kodlarining inson o'qiy oladigan nomlari (Gemini prompt'iga uzatiladi)
 LANG_NAMES = {
@@ -49,15 +59,24 @@ def _cache_key(text: str, target: str, source: str) -> str:
     return f"ai_tr:{hashlib.sha1(raw).hexdigest()[:20]}"
 
 
-def translate_text(text: str, target_lang: str, source_lang: str = "uz",
-                   retries: int = 2, backoff: float = 2.0) -> str:
-    """Yagona matnni Gemini bilan tarjima qilish.
+# Shu jarayonda kunlik limitga yetgan (429) kalitlar — keyingi chaqiruvlar
+# ularni o'tkazib yuboradi (behuda so'rov yubormaslik uchun).
+_exhausted_keys = set()
+
+
+def _is_rate_limit(err) -> bool:
+    msg = str(err).lower()
+    return any(s in msg for s in ("band", "429", "rate", "quota"))
+
+
+def translate_text(text: str, target_lang: str, source_lang: str = "uz") -> str:
+    """Yagona matnni Gemini bilan tarjima qilish (ko'p kalitli failover bilan).
 
     - target_lang == source_lang bo'lsa, asl matn qaytariladi
     - Bo'sh matn → bo'sh string
     - Cache hit → API chaqirilmaydi
-    - Rate-limit (429): `retries` marta eksponensial backoff bilan qayta urinadi
-    - Boshqa AI xato → asl matn (logger.warning)
+    - Bir kalit kunlik limitga yetsa (429), avtomatik keyingi kalitga o'tadi
+    - Hamma kalit tugasa → asl matn (logger.warning)
     """
     text = (text or "").strip()
     if not text:
@@ -84,15 +103,24 @@ def translate_text(text: str, target_lang: str, source_lang: str = "uz",
         f"Matn:\n{text}"
     )
 
+    model = getattr(settings, "GEMINI_TRANSLATE_MODEL", None)
+    all_keys = _translate_keys()
+    # Faqat tugamagan kalitlar. Hammasi tugagan bo'lsa — bo'sh ro'yxat,
+    # darhol fallback (behuda so'rov yubormaymiz; bu jarayonda quota tugagan).
+    keys = [k for k in all_keys if k not in _exhausted_keys]
+    if not keys:
+        logger.debug("Barcha tarjima kalitlari tugagan — fallback (asl matn)")
+        return text
+
     last_error = None
-    for attempt in range(retries + 1):
+    for api_key in keys:
         try:
             result = _call_gemini(
                 prompt=prompt,
                 temperature=0.2,
                 max_tokens=2000,
-                api_key=_translate_api_key(),
-                model=getattr(settings, "GEMINI_TRANSLATE_MODEL", None),
+                api_key=api_key,
+                model=model,
             ).strip()
 
             # Gemini ba'zan qo'shtirnoq bilan o'rab beradi — olib tashlash
@@ -103,25 +131,23 @@ def translate_text(text: str, target_lang: str, source_lang: str = "uz",
                 cache.set(key, result, CACHE_TTL)
                 logger.debug("Translate %s→%s: %r → %r", source_lang, target_lang, text[:40], result[:40])
                 return result
-            return text  # fallback: bo'sh natija
+            return text  # bo'sh natija — asl matn
 
         except AIServiceError as e:
             last_error = e
-            msg = str(e).lower()
-            # Faqat rate-limit (band) xato'larda qayta urinish
-            if attempt < retries and ("band" in msg or "429" in msg or "rate" in msg or "quota" in msg):
-                wait = backoff * (2 ** attempt)  # 2s, 4s, 8s...
-                logger.info("Rate-limited, %.1fs kutib qayta urinish (%d/%d)",
-                            wait, attempt + 1, retries)
-                time.sleep(wait)
+            if _is_rate_limit(e):
+                # Bu kalit tugadi — belgilab, keyingi kalitga o'tamiz
+                _exhausted_keys.add(api_key)
+                logger.info("Kalit limiti tugadi (...%s), keyingi kalitga o'tilmoqda",
+                            api_key[-6:] if api_key else "?")
                 continue
-            break
+            break  # boshqa xato — fallback
         except Exception as e:
             logger.exception("Unexpected translate error: %s", e)
             return text
 
-    logger.warning("Translate failed after %d urinishlar (%s→%s, len=%d): %s",
-                   retries + 1, source_lang, target_lang, len(text), last_error)
+    logger.warning("Translate failed — barcha kalitlar tugadi (%s→%s, len=%d): %s",
+                   source_lang, target_lang, len(text), last_error)
     return text  # fallback: asl matn
 
 
