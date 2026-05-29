@@ -13,6 +13,8 @@ Fallback: AI xato bersa, asl matn qaytariladi (logger.warning).
 """
 import hashlib
 import logging
+import threading
+import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from django.conf import settings
@@ -59,14 +61,25 @@ def _cache_key(text: str, target: str, source: str) -> str:
     return f"ai_tr:{hashlib.sha1(raw).hexdigest()[:20]}"
 
 
-# Shu jarayonda kunlik limitga yetgan (429) kalitlar — keyingi chaqiruvlar
-# ularni o'tkazib yuboradi (behuda so'rov yubormaslik uchun).
-_exhausted_keys = set()
+# Round-robin uchun kalit indeksi (yukni kalitlarga teng taqsimlash)
+_key_lock = threading.Lock()
+_key_index = 0
 
 
 def _is_rate_limit(err) -> bool:
     msg = str(err).lower()
     return any(s in msg for s in ("band", "429", "rate", "quota"))
+
+
+def _ordered_keys(keys: list) -> list:
+    """Round-robin: har chaqiruv navbatdagi kalitdan boshlanadi."""
+    global _key_index
+    if len(keys) <= 1:
+        return keys
+    with _key_lock:
+        start = _key_index % len(keys)
+        _key_index = (_key_index + 1) % len(keys)
+    return keys[start:] + keys[:start]
 
 
 def translate_text(text: str, target_lang: str, source_lang: str = "uz") -> str:
@@ -105,48 +118,54 @@ def translate_text(text: str, target_lang: str, source_lang: str = "uz") -> str:
 
     model = getattr(settings, "GEMINI_TRANSLATE_MODEL", None)
     all_keys = _translate_keys()
-    # Faqat tugamagan kalitlar. Hammasi tugagan bo'lsa — bo'sh ro'yxat,
-    # darhol fallback (behuda so'rov yubormaymiz; bu jarayonda quota tugagan).
-    keys = [k for k in all_keys if k not in _exhausted_keys]
-    if not keys:
-        logger.debug("Barcha tarjima kalitlari tugagan — fallback (asl matn)")
+    if not all_keys:
+        logger.debug("Tarjima kaliti yo'q — fallback (asl matn)")
         return text
 
+    # Gemini bepul tier — daqiqalik limit (RPM). Hamma kalit shu daqiqada
+    # limitga urilsa, qisqa kutib qayta uramiz (RPM 1 daqiqada tiklanadi).
+    rounds = 3
+    wait_seconds = 20
     last_error = None
-    for api_key in keys:
-        try:
-            result = _call_gemini(
-                prompt=prompt,
-                temperature=0.2,
-                max_tokens=2000,
-                api_key=api_key,
-                model=model,
-            ).strip()
 
-            # Gemini ba'zan qo'shtirnoq bilan o'rab beradi — olib tashlash
-            if len(result) >= 2 and result[0] == result[-1] and result[0] in ('"', "'", "«"):
-                result = result[1:-1].strip()
+    for round_i in range(rounds):
+        keys = _ordered_keys(all_keys)  # round-robin: yukni teng taqsimlash
+        for api_key in keys:
+            try:
+                result = _call_gemini(
+                    prompt=prompt,
+                    temperature=0.2,
+                    max_tokens=2000,
+                    api_key=api_key,
+                    model=model,
+                ).strip()
 
-            if result:
-                cache.set(key, result, CACHE_TTL)
-                logger.debug("Translate %s→%s: %r → %r", source_lang, target_lang, text[:40], result[:40])
-                return result
-            return text  # bo'sh natija — asl matn
+                # Gemini ba'zan qo'shtirnoq bilan o'rab beradi — olib tashlash
+                if len(result) >= 2 and result[0] == result[-1] and result[0] in ('"', "'", "«"):
+                    result = result[1:-1].strip()
 
-        except AIServiceError as e:
-            last_error = e
-            if _is_rate_limit(e):
-                # Bu kalit tugadi — belgilab, keyingi kalitga o'tamiz
-                _exhausted_keys.add(api_key)
-                logger.info("Kalit limiti tugadi (...%s), keyingi kalitga o'tilmoqda",
-                            api_key[-6:] if api_key else "?")
-                continue
-            break  # boshqa xato — fallback
-        except Exception as e:
-            logger.exception("Unexpected translate error: %s", e)
-            return text
+                if result:
+                    cache.set(key, result, CACHE_TTL)
+                    logger.debug("Translate %s→%s: %r → %r", source_lang, target_lang, text[:40], result[:40])
+                    return result
+                return text  # bo'sh natija — asl matn
 
-    logger.warning("Translate failed — barcha kalitlar tugadi (%s→%s, len=%d): %s",
+            except AIServiceError as e:
+                last_error = e
+                if _is_rate_limit(e):
+                    continue  # bu kalit band — keyingi kalitga o't
+                return text  # boshqa AI xato — fallback
+            except Exception as e:
+                logger.exception("Unexpected translate error: %s", e)
+                return text
+
+        # Hamma kalit shu daqiqada limitga urildi — kutib qayta urinamiz
+        if round_i < rounds - 1:
+            logger.info("Barcha kalitlar band (RPM), %ds kutilmoqda (round %d/%d)",
+                        wait_seconds, round_i + 1, rounds)
+            time.sleep(wait_seconds)
+
+    logger.warning("Translate failed — barcha kalitlar band (%s→%s, len=%d): %s",
                    source_lang, target_lang, len(text), last_error)
     return text  # fallback: asl matn
 
