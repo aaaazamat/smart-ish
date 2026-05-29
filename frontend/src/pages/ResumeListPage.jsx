@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useQuery } from '@tanstack/react-query'
 import {
   Search, ChevronDown, AlertCircle, Users, MapPin, User as UserIcon,
@@ -33,8 +34,9 @@ function FilterSelect({ label, value, onChange, options, placeholder, disabled }
 }
 
 function PublicResumeCard({ resume }) {
+  const { t } = useTranslation()
   const location = [resume.region_name, resume.district_name].filter(Boolean).join(', ')
-  const fullName = resume.full_name || `${resume.last_name || ''} ${resume.first_name || ''}`.trim() || 'Nomzod'
+  const fullName = resume.full_name || `${resume.last_name || ''} ${resume.first_name || ''}`.trim() || t('common.candidate')
 
   return (
     <div className="bg-white rounded-2xl border border-gray-200 p-5 hover:border-brand-300 hover:shadow-sm transition">
@@ -52,7 +54,7 @@ function PublicResumeCard({ resume }) {
           )}
           {resume.expected_salary && (
             <p className="text-sm font-medium text-gray-900 mt-2">
-              {formatNumber(resume.expected_salary)} so'm
+              {formatNumber(resume.expected_salary)} {t('common.currency')}
             </p>
           )}
           {location && (
@@ -76,7 +78,7 @@ function PublicResumeCard({ resume }) {
             </div>
           )}
           <div className="mt-3 pt-3 border-t border-gray-100 text-xs text-gray-400">
-            Yangilangan: {formatDate(resume.updated_at)}
+            {t('common.updated')}: {formatDate(resume.updated_at)}
           </div>
         </div>
       </div>
@@ -85,6 +87,7 @@ function PublicResumeCard({ resume }) {
 }
 
 function ResumeListPage() {
+  const { t } = useTranslation()
   const [searchParams, setSearchParams] = useSearchParams()
   const [searchInput, setSearchInput] = useState(searchParams.get('search') || '')
 
@@ -133,7 +136,7 @@ function ResumeListPage() {
 
   return (
     <div className="max-w-[1300px] mx-auto px-4 sm:px-6 py-6 sm:py-8">
-      <h1 className="text-4xl font-bold text-gray-900 mb-6">Rezyumelar</h1>
+      <h1 className="text-4xl font-bold text-gray-900 mb-6">{t('resume.page_title')}</h1>
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6">
         <div>
@@ -144,7 +147,7 @@ function ResumeListPage() {
                 type="text"
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
-                placeholder="Ism, familiya, kasb bo'yicha qidirish..."
+                placeholder={t('resume.search_placeholder')}
                 className="w-full bg-white border border-gray-200 rounded-xl pl-12 pr-4 h-14 text-base placeholder:text-gray-400 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 transition"
               />
             </div>
@@ -152,12 +155,12 @@ function ResumeListPage() {
               type="submit"
               className="px-10 h-14 bg-brand-500 text-white rounded-xl font-medium hover:bg-brand-600 transition shrink-0"
             >
-              Izlash
+              {t('vacancy.search_button')}
             </button>
           </form>
 
           <p className="text-sm text-gray-500 mb-4">
-            {isLoading ? 'Yuklanmoqda...' : `${total} ta rezyume topildi`}
+            {isLoading ? t('common.loading') : t('resume.found_count', { count: total })}
           </p>
 
           {isLoading && (
@@ -167,7 +170,7 @@ function ResumeListPage() {
           {isError && (
             <div className="bg-red-50 border border-red-200 text-red-700 p-5 rounded-xl flex items-start gap-3">
               <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
-              <span>{error?.message || 'Xato yuz berdi'}</span>
+              <span>{error?.message || t('common.error')}</span>
             </div>
           )}
 
@@ -175,10 +178,10 @@ function ResumeListPage() {
             <div className="bg-white rounded-2xl border border-gray-200 p-12 text-center">
               <Users className="w-14 h-14 text-gray-300 mx-auto mb-4" />
               <h2 className="text-xl font-semibold text-gray-900 mb-2">
-                Rezyume topilmadi
+                {t('resume.not_found')}
               </h2>
               <p className="text-gray-500">
-                Filterlarni o'zgartirib qayta urinib ko'ring
+                {t('resume.not_found_hint')}
               </p>
             </div>
           )}
@@ -196,7 +199,7 @@ function ResumeListPage() {
                 onClick={() => setParam('page', String(filters.page - 1))}
                 className="px-4 py-2 rounded-lg border border-gray-200 text-sm text-gray-700 hover:bg-white disabled:opacity-40"
               >
-                ← Oldingi
+                ← {t('common.prev')}
               </button>
               <span className="px-4 text-sm text-gray-600">{filters.page} / {totalPages}</span>
               <button
@@ -204,7 +207,7 @@ function ResumeListPage() {
                 onClick={() => setParam('page', String(filters.page + 1))}
                 className="px-4 py-2 rounded-lg border border-gray-200 text-sm text-gray-700 hover:bg-white disabled:opacity-40"
               >
-                Keyingi →
+                {t('common.next')} →
               </button>
             </div>
           )}
@@ -212,42 +215,42 @@ function ResumeListPage() {
 
         <aside className="bg-white rounded-2xl border border-gray-200 p-5 h-fit lg:sticky lg:top-28">
           <div className="flex items-center justify-between mb-5">
-            <h2 className="font-semibold text-gray-900">Filtrlar</h2>
+            <h2 className="font-semibold text-gray-900">{t('vacancy.filters')}</h2>
             <button
               type="button"
               onClick={handleClear}
               disabled={!hasFilters}
               className="text-sm text-red-500 hover:text-red-600 disabled:text-gray-300 disabled:cursor-not-allowed font-medium"
             >
-              Tozalash
+              {t('common.clear')}
             </button>
           </div>
           <div className="space-y-4">
             <FilterSelect
-              label="Hudud"
-              placeholder="Barchasi"
+              label={t('filter.region')}
+              placeholder={t('filter.all')}
               value={filters.region}
               onChange={(e) => setParam('region', e.target.value)}
               options={regions}
             />
             <FilterSelect
-              label="Tuman / Shahar"
-              placeholder={filters.region ? 'Barchasi' : 'Avval hudud'}
+              label={t('filter.district')}
+              placeholder={filters.region ? t('filter.all') : t('filter.select_region_first')}
               value={filters.district}
               onChange={(e) => setParam('district', e.target.value)}
               options={districts}
               disabled={!filters.region}
             />
             <FilterSelect
-              label="Kasb"
-              placeholder="Barchasi"
+              label={t('resume.profession')}
+              placeholder={t('filter.all')}
               value={filters.profession}
               onChange={(e) => setParam('profession', e.target.value)}
               options={professions}
             />
             <FilterSelect
-              label="Karyera darajasi"
-              placeholder="Barchasi"
+              label={t('resume.career_level')}
+              placeholder={t('filter.all')}
               value={filters.career_level}
               onChange={(e) => setParam('career_level', e.target.value)}
               options={CAREER_LEVEL_OPTIONS}

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useQuery } from '@tanstack/react-query'
 import {
   Search, MapPin, Briefcase, FileText, Building2, ArrowRight,
@@ -19,6 +20,7 @@ import AnimatedNumber from '@/components/ui/AnimatedNumber'
 // HERO
 // ─────────────────────────────────────────────
 function Hero({ regions }) {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const [search, setSearch] = useState('')
   const [region, setRegion] = useState('')
@@ -78,11 +80,11 @@ function Hero({ regions }) {
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/15 backdrop-blur-sm border border-white/25 text-xs font-medium mb-6 animate-fade-in-down">
               <Sparkles className="w-3.5 h-3.5 text-amber-300 animate-sparkle" />
-              SmartIsh — AI bilan ish topish endi yanada oson
+              {t('home.hero_badge')}
             </div>
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-[1.1] tracking-tight animate-fade-in-up">
-              Sun'iy intellekt<br />
-              yordamida ish topish<br />
+              {t('home.hero_title_1')}<br />
+              {t('home.hero_title_2')}<br />
               <span
                 style={{
                   background: 'linear-gradient(135deg, #fbbf24 0%, #f472b6 40%, #c084fc 70%, #fbbf24 100%)',
@@ -93,12 +95,11 @@ function Hero({ regions }) {
                   animation: 'gradient-shift 6s ease infinite',
                 }}
               >
-                endi yanada oson
+                {t('home.hero_title_3')}
               </span>
             </h1>
             <p className="text-base sm:text-lg text-white/85 mt-6 max-w-xl animate-fade-in-up stagger-2" style={{ animationFillMode: 'backwards' }}>
-              O'zbekistondagi minglab vakansiyalar va nomzodlar bir joyda.
-              SmartIsh AI yordamida o'zingizga eng mosini toping.
+              {t('home.hero_subtitle')}
             </p>
           </div>
 
@@ -109,10 +110,9 @@ function Hero({ regions }) {
                   <CheckCircle2 className="w-5 h-5" />
                 </div>
                 <div>
-                  <div className="font-bold text-lg">100% Bepul</div>
+                  <div className="font-bold text-lg">{t('home.hero_free_title')}</div>
                   <div className="text-sm text-white/90 mt-1">
-                    Ish qidiruvchi va ish beruvchilar uchun
-                    platformadan foydalanish to'liq bepul
+                    {t('home.hero_free_text')}
                   </div>
                 </div>
               </div>
@@ -131,7 +131,7 @@ function Hero({ regions }) {
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Kasb, lavozim nomi"
+              placeholder={t('home.search_placeholder')}
               className="w-full bg-transparent text-gray-900 rounded-xl pl-10 sm:pl-12 pr-4 h-12 sm:h-14 text-sm sm:text-base placeholder:text-gray-400 focus:outline-none"
             />
           </div>
@@ -142,7 +142,7 @@ function Hero({ regions }) {
               onChange={(e) => setRegion(e.target.value)}
               className="w-full appearance-none bg-transparent text-gray-900 rounded-xl pl-10 sm:pl-12 pr-10 h-12 sm:h-14 text-sm sm:text-base focus:outline-none cursor-pointer"
             >
-              <option value="">O'zbekiston bo'ylab</option>
+              <option value="">{t('home.all_uzbekistan')}</option>
               {regions?.map((r) => (
                 <option key={r.id} value={r.id}>{r.name}</option>
               ))}
@@ -153,7 +153,7 @@ function Hero({ regions }) {
             className="h-12 sm:h-14 px-6 sm:px-8 lg:px-12 smartish-gradient-bg hover:opacity-90 text-white font-semibold rounded-xl transition flex items-center justify-center gap-2 hover:shadow-lg hover:shadow-purple-500/40"
           >
             <Search className="w-5 h-5" />
-            Qidirish
+            {t('common.search')}
           </button>
         </form>
       </div>
@@ -165,10 +165,11 @@ function Hero({ regions }) {
 // STATS BAR (overlapping with hero bottom)
 // ─────────────────────────────────────────────
 function StatsBar({ stats }) {
+  const { t } = useTranslation()
   const items = [
-    { icon: Briefcase, value: stats.vacancies, label: 'Vakansiyalar', color: 'text-purple-500', bg: 'bg-purple-50' },
-    { icon: FileText, value: stats.resumes, label: 'Rezyumelar', color: 'text-pink-500', bg: 'bg-pink-50' },
-    { icon: Building2, value: stats.organizations, label: 'Tashkilotlar', color: 'text-orange-500', bg: 'bg-orange-50' },
+    { icon: Briefcase, value: stats.vacancies, label: t('home.stats_vacancies'), color: 'text-purple-500', bg: 'bg-purple-50' },
+    { icon: FileText, value: stats.resumes, label: t('home.stats_resumes'), color: 'text-pink-500', bg: 'bg-pink-50' },
+    { icon: Building2, value: stats.organizations, label: t('home.stats_organizations'), color: 'text-orange-500', bg: 'bg-orange-50' },
   ]
   return (
     <section className="relative -mt-8 z-10 max-w-[1400px] mx-auto px-4 sm:px-6">
@@ -201,14 +202,14 @@ function StatsBar({ stats }) {
               className="inline-flex items-center justify-center gap-2 px-4 sm:px-5 py-2.5 sm:py-3 smartish-gradient-bg text-white rounded-xl text-sm sm:text-base font-medium transition hover:shadow-lg hover:shadow-purple-500/40 hover:scale-105"
             >
               <FileText className="w-4 h-4" />
-              Rezyume joylash
+              {t('home.post_resume')}
             </Link>
             <Link
               to="/register"
               className="inline-flex items-center justify-center gap-2 px-4 sm:px-5 py-2.5 sm:py-3 bg-white hover:bg-gray-50 text-brand-600 border border-brand-200 rounded-xl text-sm sm:text-base font-medium transition hover:scale-105"
             >
               <Briefcase className="w-4 h-4" />
-              Vakansiya joylash
+              {t('home.post_vacancy')}
             </Link>
           </div>
         </div>
@@ -221,23 +222,24 @@ function StatsBar({ stats }) {
 // HOW IT WORKS (3 steps)
 // ─────────────────────────────────────────────
 function HowItWorks() {
+  const { t } = useTranslation()
   const steps = [
     {
       icon: UserPlus,
-      title: "1. Ro'yxatdan o'ting",
-      text: "Telefon raqamingiz orqali bir necha daqiqada akkaunt yarating",
+      title: t('home.step1_title'),
+      text: t('home.step1_text'),
       color: 'from-pink-400 to-pink-600',
     },
     {
       icon: FileText,
-      title: '2. Rezyume yarating',
-      text: 'Tajriba, ko\'nikma va ta\'lim ma\'lumotlaringizni kiriting',
+      title: t('home.step2_title'),
+      text: t('home.step2_text'),
       color: 'from-purple-400 to-purple-600',
     },
     {
       icon: Send,
-      title: '3. Ariza yuboring',
-      text: 'AI tavsiyalari asosida eng mos vakansiyani toping va ariza bering',
+      title: t('home.step3_title'),
+      text: t('home.step3_text'),
       color: 'from-orange-400 to-orange-600',
     },
   ]
@@ -246,10 +248,10 @@ function HowItWorks() {
       <AnimateOnScroll variant="up">
         <div className="text-center mb-12">
           <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-3">
-            Qanday <span className="smartish-gradient-text">ishlaydi?</span>
+            {t('home.how_title')} <span className="smartish-gradient-text">{t('home.how_title_accent')}</span>
           </h2>
           <p className="text-gray-500 max-w-2xl mx-auto">
-            3 oddiy qadam — siz o'zingizga mos ishni topasiz, ish beruvchi esa kerakli mutaxassisni
+            {t('home.how_subtitle')}
           </p>
         </div>
       </AnimateOnScroll>
@@ -285,6 +287,7 @@ function HowItWorks() {
 // TOP VACANCIES
 // ─────────────────────────────────────────────
 function TopVacanciesSection() {
+  const { t } = useTranslation()
   const { data, isLoading } = useQuery({
     queryKey: ['top-vacancies'],
     queryFn: () => vacanciesApi.list({ ordering: '-salary_from', page_size: 6 }),
@@ -298,22 +301,22 @@ function TopVacanciesSection() {
             <div>
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gradient-to-r from-amber-100 to-orange-100 text-amber-700 text-xs font-semibold mb-3">
                 <TrendingUp className="w-3.5 h-3.5" />
-                Eng yaxshi takliflar
+                {t('home.top_badge')}
               </div>
               <h2 className="text-3xl lg:text-4xl font-bold text-gray-900">
-                Yuqori maoshli <span className="smartish-gradient-text">ishlar</span>
+                {t('home.top_title')} <span className="smartish-gradient-text">{t('home.top_title_accent')}</span>
               </h2>
             </div>
             <Link
               to="/vacancies?ordering=-salary_from"
               className="inline-flex items-center gap-1 px-4 py-2 bg-white border border-gray-200 rounded-xl text-brand-600 font-medium hover:border-brand-300 hover:bg-brand-50 hover-scale transition"
             >
-              Barchasini ko'rish <ArrowRight className="w-4 h-4" />
+              {t('home.view_all')} <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
         </AnimateOnScroll>
 
-        {isLoading && <div className="h-40 flex items-center justify-center text-gray-400">Yuklanmoqda...</div>}
+        {isLoading && <div className="h-40 flex items-center justify-center text-gray-400">{t('common.loading')}</div>}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {data?.results?.slice(0, 6).map((v, i) => (
@@ -330,53 +333,53 @@ function TopVacanciesSection() {
 // ─────────────────────────────────────────────
 // SPECIAL CATEGORIES
 // ─────────────────────────────────────────────
-const CATEGORIES = [
-  {
-    icon: Accessibility,
-    title: "Nogironligi bo'lgan shaxslar uchun",
-    description: "Maxsus moslashtirilgan ish o'rinlari",
-    to: '/vacancies?for_disabled=true',
-    gradient: 'from-blue-500 to-cyan-500',
-  },
-  {
-    icon: GraduationCap,
-    title: 'Talaba va bitiruvchilar',
-    description: 'Yangi mutaxassislar uchun start',
-    to: '/vacancies?for_students=true',
-    gradient: 'from-purple-500 to-pink-500',
-  },
-  {
-    icon: User,
-    title: 'Ayollar uchun',
-    description: "Ayollarga mos ish o'rinlari",
-    to: '/vacancies?gender=female',
-    gradient: 'from-pink-500 to-rose-500',
-  },
-  {
-    icon: Bookmark,
-    title: 'Bitiruvchilar uchun',
-    description: 'Yangi bitiruvchilarga moslangan',
-    to: '/vacancies?for_graduates=true',
-    gradient: 'from-emerald-500 to-teal-500',
-  },
-]
-
 function SpecialCategoriesSection() {
+  const { t } = useTranslation()
+  const categories = [
+    {
+      icon: Accessibility,
+      title: t('home.cat_disabled_title'),
+      description: t('home.cat_disabled_desc'),
+      to: '/vacancies?for_disabled=true',
+      gradient: 'from-blue-500 to-cyan-500',
+    },
+    {
+      icon: GraduationCap,
+      title: t('home.cat_students_title'),
+      description: t('home.cat_students_desc'),
+      to: '/vacancies?for_students=true',
+      gradient: 'from-purple-500 to-pink-500',
+    },
+    {
+      icon: User,
+      title: t('home.cat_women_title'),
+      description: t('home.cat_women_desc'),
+      to: '/vacancies?gender=female',
+      gradient: 'from-pink-500 to-rose-500',
+    },
+    {
+      icon: Bookmark,
+      title: t('home.cat_graduates_title'),
+      description: t('home.cat_graduates_desc'),
+      to: '/vacancies?for_graduates=true',
+      gradient: 'from-emerald-500 to-teal-500',
+    },
+  ]
   return (
     <section className="bg-gray-50">
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-12 sm:py-16 lg:py-20">
         <AnimateOnScroll variant="up">
           <div className="text-center mb-12">
             <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-3">
-              Alohida toifalar uchun ishlar
+              {t('home.categories_title')}
             </h2>
             <p className="text-gray-500">
-              Har kim uchun mos imkoniyatlar mavjud
+              {t('home.categories_subtitle')}
             </p>
           </div>
         </AnimateOnScroll>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          {CATEGORIES.map((c, i) => {
+          {categories.map((c, i) => {
             const Icon = c.icon
             return (
               <AnimateOnScroll key={i} variant="up" delay={i * 100}>
@@ -400,7 +403,7 @@ function SpecialCategoriesSection() {
                     </h3>
                     <p className="text-sm text-gray-500">{c.description}</p>
                     <div className="mt-4 inline-flex items-center gap-1 text-sm text-brand-600 font-medium">
-                      Ko'rish
+                      {t('home.view')}
                       <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition" />
                     </div>
                   </div>
@@ -429,6 +432,7 @@ const INDUSTRY_CONFIG = {
 }
 
 function IndustriesSection() {
+  const { t } = useTranslation()
   const { data: industries = [] } = useQuery({
     queryKey: ['industries'],
     queryFn: referenceApi.industries,
@@ -440,10 +444,10 @@ function IndustriesSection() {
       <AnimateOnScroll variant="up">
         <div className="text-center mb-12">
           <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-3">
-            Sohalar bo'yicha qidiring
+            {t('home.industries_title')}
           </h2>
           <p className="text-gray-500">
-            Sizga mos sohani tanlang va vakansiyalarni ko'ring
+            {t('home.industries_subtitle')}
           </p>
         </div>
       </AnimateOnScroll>
@@ -467,7 +471,7 @@ function IndustriesSection() {
                   {i.name}
                 </div>
                 <div className="text-xs text-gray-400 mt-1.5 inline-flex items-center gap-1">
-                  Ko'rish <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition" />
+                  {t('home.view')} <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition" />
                 </div>
               </Link>
             </AnimateOnScroll>
@@ -482,21 +486,22 @@ function IndustriesSection() {
 // FEATURES (why us)
 // ─────────────────────────────────────────────
 function FeaturesSection() {
+  const { t } = useTranslation()
   const features = [
     {
       icon: Sparkles,
-      title: 'AI yordamchisi',
-      text: "Sun'iy intellekt sizga eng mos vakansiya yoki nomzodni tanlaydi",
+      title: t('home.feature1_title'),
+      text: t('home.feature1_text'),
     },
     {
       icon: Shield,
-      title: 'Ishonchli platforma',
-      text: "Tekshirilgan tashkilotlar va xavfsiz ma'lumotlar himoyasi",
+      title: t('home.feature2_title'),
+      text: t('home.feature2_text'),
     },
     {
       icon: Zap,
-      title: 'Tezkor ishlaydi',
-      text: 'Bir necha daqiqada ariza yuboring yoki taklif oling',
+      title: t('home.feature3_title'),
+      text: t('home.feature3_text'),
     },
   ]
   return (
@@ -508,10 +513,10 @@ function FeaturesSection() {
         <AnimateOnScroll variant="up">
           <div className="text-center mb-12">
             <h2 className="text-3xl lg:text-4xl font-bold mb-3">
-              Nega aynan <span style={{ background: 'linear-gradient(135deg, #fbbf24, #f472b6, #c084fc)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>SmartIsh?</span>
+              {t('home.features_title')} <span style={{ background: 'linear-gradient(135deg, #fbbf24, #f472b6, #c084fc)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>SmartIsh?</span>
             </h2>
             <p className="text-white/70 max-w-2xl mx-auto">
-              Zamonaviy texnologiyalar, AI va mijozga g'amxo'rlik bizni boshqalardan ajratib turadi
+              {t('home.features_subtitle')}
             </p>
           </div>
         </AnimateOnScroll>
@@ -540,6 +545,7 @@ function FeaturesSection() {
 // CTA
 // ─────────────────────────────────────────────
 function CtaSection() {
+  const { t } = useTranslation()
   return (
     <section className="max-w-[1400px] mx-auto px-4 sm:px-6 py-12 sm:py-16 lg:py-20">
       <AnimateOnScroll variant="scale">
@@ -550,13 +556,13 @@ function CtaSection() {
           <div className="relative">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 backdrop-blur text-xs font-semibold mb-4">
               <Sparkles className="w-3 h-3 animate-twinkle" />
-              Yangi imkoniyatlar sizni kutmoqda
+              {t('home.cta_badge')}
             </div>
             <h2 className="text-3xl lg:text-4xl font-bold mb-4">
-              Bugundan ish qidirishni boshlang!
+              {t('home.cta_title')}
             </h2>
             <p className="text-white/90 max-w-xl mx-auto mb-8">
-              Bepul ro'yxatdan o'ting va minglab vakansiyalar ichidan o'zingizga mosini toping
+              {t('home.cta_subtitle')}
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Link
@@ -564,14 +570,14 @@ function CtaSection() {
                 className="inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-white text-brand-600 rounded-xl font-semibold hover:bg-gray-50 hover:scale-105 transition-all shadow-lg"
               >
                 <UserPlus className="w-5 h-5" />
-                Bepul ro'yxatdan o'tish
+                {t('home.cta_register')}
               </Link>
               <Link
                 to="/vacancies"
                 className="inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-white/15 backdrop-blur border border-white/30 rounded-xl font-semibold hover:bg-white/25 hover:scale-105 transition-all"
               >
                 <Search className="w-5 h-5" />
-                Vakansiyalarni ko'rish
+                {t('home.cta_browse')}
               </Link>
             </div>
           </div>
