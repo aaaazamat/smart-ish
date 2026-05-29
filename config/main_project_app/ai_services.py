@@ -68,8 +68,12 @@ def _call_gemini(
     temperature: float = 0.7,
     max_tokens: int = 1500,
     response_mime_type: str = None,
+    api_key: str = None,
 ) -> str:
-    api_key = getattr(settings, "GEMINI_API_KEY", "")
+    # api_key berilmasa, asosiy GEMINI_API_KEY ishlatiladi.
+    # Tarjima servisi alohida kalit uzatishi mumkin (rate-limit'ni bo'lish uchun).
+    if not api_key:
+        api_key = getattr(settings, "GEMINI_API_KEY", "")
     if not api_key:
         raise AIServiceError(
             "GEMINI_API_KEY .env faylida sozlanmagan. "

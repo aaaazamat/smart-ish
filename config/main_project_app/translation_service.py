@@ -16,11 +16,18 @@ import logging
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
+from django.conf import settings
 from django.core.cache import cache
 
 from .ai_services import _call_gemini, AIServiceError
 
 logger = logging.getLogger(__name__)
+
+
+def _translate_api_key() -> str:
+    """Tarjima uchun alohida kalit (bo'lsa), aks holda asosiy GEMINI_API_KEY."""
+    return (getattr(settings, "GEMINI_API_KEY_TRANSLATE", "") or
+            getattr(settings, "GEMINI_API_KEY", ""))
 
 # Til kodlarining inson o'qiy oladigan nomlari (Gemini prompt'iga uzatiladi)
 LANG_NAMES = {
@@ -84,6 +91,7 @@ def translate_text(text: str, target_lang: str, source_lang: str = "uz",
                 prompt=prompt,
                 temperature=0.2,
                 max_tokens=2000,
+                api_key=_translate_api_key(),
             ).strip()
 
             # Gemini ba'zan qo'shtirnoq bilan o'rab beradi — olib tashlash

@@ -402,6 +402,12 @@ CACHE_TTL_VACANCY_DETAIL = 180    # vakansiya detali — 3 daqiqa
 # ──────────────────────────────────────────────
 GEMINI_API_KEY = config("GEMINI_API_KEY", default="")
 
+# Tarjima uchun ALOHIDA Gemini kaliti (ixtiyoriy).
+# Agar berilsa, translation_service shu kalitni ishlatadi — shunda ko'p tarjima
+# so'rovlari chatbot/match (asosiy GEMINI_API_KEY) quota'siga ta'sir qilmaydi.
+# Bo'sh bo'lsa, asosiy GEMINI_API_KEY ishlatiladi (fallback).
+GEMINI_API_KEY_TRANSLATE = config("GEMINI_API_KEY_TRANSLATE", default="")
+
 # ──────────────────────────────────────────────
 # BREVO HTTP API (Render free planda SMTP bloklangan,
 # shuning uchun HTTPS API ishlatamiz)
