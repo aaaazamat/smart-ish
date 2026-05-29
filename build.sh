@@ -71,5 +71,27 @@ if [ "${SEED_DEMO:-False}" = "True" ] || [ "${SEED_DEMO:-False}" = "true" ]; the
       --idempotent || echo "Demo yaratishda xato (davom etiladi)"
 fi
 
+# ────────────────────────────────────────────────────────────────
+# AI tarjima — referens ma'lumotlar (kasb, soha, viloyat, tuman) ni
+# ru va qaa tillariga Gemini orqali tarjima qilish.
+#
+# YOQISH: Render env vars'da TRANSLATE_ON_BUILD=True qo'ying.
+#
+# Idempotent — faqat bo'sh (name_ru / name_qaa) maydonlar tarjima qilinadi.
+# --limit bilan har deploy'da bir qism tarjima qilinadi (Gemini bepul tier
+# limiti va Render build timeout'idan oshmaslik uchun). Hammasi to'lguncha
+# bir necha marta "Manual Deploy" qiling, keyin TRANSLATE_ON_BUILD=False qo'ying.
+# ────────────────────────────────────────────────────────────────
+if [ "${TRANSLATE_ON_BUILD:-False}" = "True" ] || [ "${TRANSLATE_ON_BUILD:-False}" = "true" ]; then
+  echo ""
+  echo "──────────────────────────────────────"
+  echo " AI tarjima (referens ma'lumotlar)..."
+  echo "──────────────────────────────────────"
+  python manage.py translate_existing \
+      --only reference \
+      --limit "${TRANSLATE_LIMIT:-40}" \
+      || echo "Tarjima qisman bajarildi yoki o'tkazib yuborildi (davom etiladi)"
+fi
+
 echo ""
 echo "Build muvaffaqiyatli yakunlandi."

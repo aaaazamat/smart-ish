@@ -108,6 +108,12 @@
     "id_label": "ID",
     "posted": "E'lon qilingan"
   },
+  "salary": {
+    "negotiable": "Kelishilgan",
+    "range": "{{from}} dan {{to}} so'mgacha",
+    "from": "{{from}} so'mdan",
+    "to": "{{to}} so'mgacha"
+  },
   "filter": {
     "region": "Hudud",
     "all_regions": "Barcha hududlar",

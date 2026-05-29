@@ -52,38 +52,49 @@ class Command(BaseCommand):
 
     def handle(self, *args, **opts):
         scope = opts["only"]
-        limit = opts["limit"]
+        # limit — JAMI nechta yozuv tarjima qilinadi (barcha modellar bo'ylab).
+        # 0 = cheksiz. Build timeout va Gemini limitidan oshmaslik uchun ishlatiladi.
+        self.remaining = opts["limit"] or None
         dry = opts["dry_run"]
 
         self.stdout.write(self.style.NOTICE(
-            f"Boshlanyapti: scope={scope}, limit={limit or '∞'}, dry_run={dry}"
+            f"Boshlanyapti: scope={scope}, limit={self.remaining or '∞'} (jami), dry_run={dry}"
         ))
 
         if scope in ("reference", "all"):
             for Model in REFERENCE_MODELS:
-                self._translate_name_field(Model, limit=limit, dry=dry)
+                if self._limit_reached():
+                    break
+                self._translate_name_field(Model, dry=dry)
 
-        if scope in ("vacancy", "all"):
-            self._translate_text_field(Vacancy, "description", limit=limit, dry=dry)
+        if scope in ("vacancy", "all") and not self._limit_reached():
+            self._translate_text_field(Vacancy, "description", dry=dry)
 
-        if scope in ("organization", "all"):
-            self._translate_text_field(Organization, "description", limit=limit, dry=dry)
+        if scope in ("organization", "all") and not self._limit_reached():
+            self._translate_text_field(Organization, "description", dry=dry)
 
-        if scope in ("resume", "all"):
-            self._translate_text_field(Resume, "profession_detail", limit=limit, dry=dry)
+        if scope in ("resume", "all") and not self._limit_reached():
+            self._translate_text_field(Resume, "profession_detail", dry=dry)
 
         self.stdout.write(self.style.SUCCESS("Yakunlandi."))
 
-    def _translate_name_field(self, Model, limit=0, dry=False):
+    def _limit_reached(self) -> bool:
+        return self.remaining is not None and self.remaining <= 0
+
+    def _translate_name_field(self, Model, dry=False):
         """Referens model: `name` ustunini name_uz/_ru/_qaa ga tarjima qilish."""
-        qs = Model.objects.all()
-        if limit:
-            qs = qs[:limit]
+        # Faqat tarjimaga muhtoj (name_ru yoki name_qaa bo'sh) yozuvlar
+        qs = Model.objects.filter(name_ru="") | Model.objects.filter(name_qaa="")
+        qs = qs.distinct()
         total = qs.count()
-        self.stdout.write(f"\n[{Model.__name__}] {total} ta yozuv")
+        self.stdout.write(f"\n[{Model.__name__}] tarjimaga muhtoj: {total} ta")
 
         done = 0
         for obj in qs:
+            if self._limit_reached():
+                self.stdout.write(self.style.WARNING("  Limitga yetildi — to'xtatildi"))
+                break
+
             src = obj.name_uz or obj.name
             if not src:
                 continue
@@ -105,23 +116,29 @@ class Command(BaseCommand):
 
             if updates:
                 done += 1
-                if done % 10 == 0 or done == total:
-                    self.stdout.write(f"  {done}/{total} tarjima qilindi")
+                if self.remaining is not None:
+                    self.remaining -= 1
+                if done % 10 == 0:
+                    self.stdout.write(f"  {done} tarjima qilindi")
                 if dry:
                     self.stdout.write(f"  [dry] {Model.__name__}#{obj.pk}: {updates}")
 
-        self.stdout.write(self.style.SUCCESS(f"  {Model.__name__} yakunlandi: {done}/{total}"))
+        self.stdout.write(self.style.SUCCESS(f"  {Model.__name__} yakunlandi: {done} ta"))
 
-    def _translate_text_field(self, Model, field, limit=0, dry=False):
+    def _translate_text_field(self, Model, field, dry=False):
         """User content (Vacancy.description, Resume.profession_detail) tarjimasi."""
-        qs = Model.objects.all()
-        if limit:
-            qs = qs[:limit]
+        # Faqat tarjimaga muhtoj yozuvlar (manba bor, lekin ru yoki qaa bo'sh)
+        qs = (Model.objects.filter(**{f"{field}_ru": ""}) |
+              Model.objects.filter(**{f"{field}_qaa": ""})).distinct()
         total = qs.count()
-        self.stdout.write(f"\n[{Model.__name__}.{field}] {total} ta yozuv")
+        self.stdout.write(f"\n[{Model.__name__}.{field}] tarjimaga muhtoj: {total} ta")
 
         done = 0
         for obj in qs:
+            if self._limit_reached():
+                self.stdout.write(self.style.WARNING("  Limitga yetildi — to'xtatildi"))
+                break
+
             src = getattr(obj, f"{field}_uz", "") or getattr(obj, field, "")
             if not src:
                 continue
@@ -143,7 +160,9 @@ class Command(BaseCommand):
 
             if updates:
                 done += 1
-                if done % 5 == 0 or done == total:
-                    self.stdout.write(f"  {done}/{total} tarjima qilindi")
+                if self.remaining is not None:
+                    self.remaining -= 1
+                if done % 5 == 0:
+                    self.stdout.write(f"  {done} tarjima qilindi")
 
         self.stdout.write(self.style.SUCCESS(f"  {Model.__name__}.{field} yakunlandi: {done}/{total}"))

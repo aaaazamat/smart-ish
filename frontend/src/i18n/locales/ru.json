@@ -108,6 +108,12 @@
     "id_label": "ID",
     "posted": "Опубликовано"
   },
+  "salary": {
+    "negotiable": "По договорённости",
+    "range": "от {{from}} до {{to}} сум",
+    "from": "от {{from}} сум",
+    "to": "до {{to}} сум"
+  },
   "filter": {
     "region": "Регион",
     "all_regions": "Все регионы",
