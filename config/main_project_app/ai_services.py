@@ -37,10 +37,13 @@ def _match_cache_key(resume, vacancy, lang: str = "uz") -> str:
     digest = hashlib.sha1(raw.encode("utf-8")).hexdigest()[:16]
     return f"ai_match:{digest}"
 
-GEMINI_URL = (
-    "https://generativelanguage.googleapis.com/v1beta/"
-    "models/gemini-2.5-flash:generateContent"
+# Default model — chat/match/generatsiya uchun (yaxshi sifat)
+GEMINI_MODEL = "gemini-2.5-flash"
+GEMINI_URL_TEMPLATE = (
+    "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
 )
+# Orqaga moslik uchun (eski kod GEMINI_URL'ni ishlatishi mumkin)
+GEMINI_URL = GEMINI_URL_TEMPLATE.format(model=GEMINI_MODEL)
 
 
 # Til kodlari uchun inson o'qiy oladigan nomlar (prompt'larda ishlatiladi)
@@ -69,6 +72,7 @@ def _call_gemini(
     max_tokens: int = 1500,
     response_mime_type: str = None,
     api_key: str = None,
+    model: str = None,
 ) -> str:
     # api_key berilmasa, asosiy GEMINI_API_KEY ishlatiladi.
     # Tarjima servisi alohida kalit uzatishi mumkin (rate-limit'ni bo'lish uchun).
@@ -79,6 +83,8 @@ def _call_gemini(
             "GEMINI_API_KEY .env faylida sozlanmagan. "
             "Iltimos, https://aistudio.google.com/apikey dan kalit oling."
         )
+    # model berilmasa, default GEMINI_MODEL (gemini-2.5-flash)
+    gemini_url = GEMINI_URL_TEMPLATE.format(model=model or GEMINI_MODEL)
 
     if contents is None:
         contents = [{"parts": [{"text": prompt}]}]
@@ -102,7 +108,7 @@ def _call_gemini(
     data = json.dumps(payload).encode("utf-8")
 
     req = urllib.request.Request(
-        f"{GEMINI_URL}?key={api_key}",
+        f"{gemini_url}?key={api_key}",
         data=data,
         headers={"Content-Type": "application/json"},
         method="POST",

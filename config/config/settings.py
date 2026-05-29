@@ -408,6 +408,11 @@ GEMINI_API_KEY = config("GEMINI_API_KEY", default="")
 # Bo'sh bo'lsa, asosiy GEMINI_API_KEY ishlatiladi (fallback).
 GEMINI_API_KEY_TRANSLATE = config("GEMINI_API_KEY_TRANSLATE", default="")
 
+# Tarjima uchun model. gemini-2.5-flash bepul tier'da kuniga atigi 20 so'rov beradi,
+# shuning uchun tarjima (oddiy vazifa) uchun gemini-2.0-flash-lite ishlatamiz —
+# bepul tier'da kuniga ~200 so'rov, daqiqada 30. Sifat tarjima uchun yetarli.
+GEMINI_TRANSLATE_MODEL = config("GEMINI_TRANSLATE_MODEL", default="gemini-2.0-flash-lite")
+
 # ──────────────────────────────────────────────
 # BREVO HTTP API (Render free planda SMTP bloklangan,
 # shuning uchun HTTPS API ishlatamiz)

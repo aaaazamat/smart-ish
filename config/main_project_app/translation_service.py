@@ -92,6 +92,7 @@ def translate_text(text: str, target_lang: str, source_lang: str = "uz",
                 temperature=0.2,
                 max_tokens=2000,
                 api_key=_translate_api_key(),
+                model=getattr(settings, "GEMINI_TRANSLATE_MODEL", None),
             ).strip()
 
             # Gemini ba'zan qo'shtirnoq bilan o'rab beradi — olib tashlash
