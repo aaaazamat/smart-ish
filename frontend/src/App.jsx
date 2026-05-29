@@ -35,6 +35,8 @@ const EmployerResumeDetailPage = lazy(() => import('@/pages/employer/ResumeDetai
 const AdminDashboardPage = lazy(() => import('@/pages/admin/DashboardPage'))
 const AdminUsersPage = lazy(() => import('@/pages/admin/UsersPage'))
 const AdminModerationPage = lazy(() => import('@/pages/admin/ModerationPage'))
+const AdminVacancyEditPage = lazy(() => import('@/pages/admin/VacancyEditPage'))
+const AdminResumeEditPage = lazy(() => import('@/pages/admin/ResumeEditPage'))
 const AdminReferencePage = lazy(() => import('@/pages/admin/ReferencePage'))
 const AdminReportsPage = lazy(() => import('@/pages/admin/ReportsPage'))
 
@@ -85,6 +87,8 @@ function App() {
             <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
             <Route path="/admin/users" element={<AdminUsersPage />} />
             <Route path="/admin/moderation" element={<AdminModerationPage />} />
+            <Route path="/admin/vacancies/:id/edit" element={<AdminVacancyEditPage />} />
+            <Route path="/admin/resumes/:id/edit" element={<AdminResumeEditPage />} />
             <Route path="/admin/reference" element={<AdminReferencePage />} />
             <Route path="/admin/reports" element={<AdminReportsPage />} />
           </Route>

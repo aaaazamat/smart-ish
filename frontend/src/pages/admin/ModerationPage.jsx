@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import {
   Search, Loader2, AlertCircle, ShieldAlert, Briefcase, FileText,
-  Power, Eye, Users, Heart, Flag, ExternalLink, ChevronDown,
+  Power, Eye, Users, Heart, Flag, ExternalLink, ChevronDown, Pencil,
 } from 'lucide-react'
 import {
   useAdminVacancies,
@@ -66,6 +66,13 @@ function VacancyRow({ v, onToggle, isPending }) {
           <ExternalLink className="w-3.5 h-3.5" />
           Ochish
         </Link>
+        <Link
+          to={`/admin/vacancies/${v.id}/edit`}
+          className="inline-flex items-center gap-1 text-xs font-medium text-brand-600 bg-brand-50 hover:bg-brand-100 px-3 py-1.5 rounded-lg transition"
+        >
+          <Pencil className="w-3.5 h-3.5" />
+          Tahrirlash
+        </Link>
         <button
           type="button"
           onClick={() => onToggle(v.id)}
@@ -128,12 +135,19 @@ function ResumeRow({ r, onToggle, isPending }) {
         </div>
       </div>
       <div className="flex items-center gap-2 pt-3 border-t border-gray-100">
+        <Link
+          to={`/admin/resumes/${r.id}/edit`}
+          className="ml-auto inline-flex items-center gap-1 text-xs font-medium text-brand-600 bg-brand-50 hover:bg-brand-100 px-3 py-1.5 rounded-lg transition"
+        >
+          <Pencil className="w-3.5 h-3.5" />
+          Tahrirlash
+        </Link>
         <button
           type="button"
           onClick={() => onToggle(r.id)}
           disabled={isPending}
           className={cn(
-            'ml-auto inline-flex items-center gap-1 text-xs font-medium px-3 py-1.5 rounded-lg transition disabled:opacity-40',
+            'inline-flex items-center gap-1 text-xs font-medium px-3 py-1.5 rounded-lg transition disabled:opacity-40',
             r.is_published
               ? 'text-amber-700 bg-amber-50 hover:bg-amber-100'
               : 'text-green-700 bg-green-50 hover:bg-green-100'

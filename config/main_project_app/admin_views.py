@@ -34,6 +34,12 @@ from .admin_serializers import (
     AdminUniversitySerializer, AdminUniversityDirectionSerializer,
     ReportCreateSerializer, AdminReportListSerializer, AdminReportResolveSerializer,
 )
+# Admin to'liq tahrirlash uchun employer/job_seeker write serializer'laridan
+# foydalanadi (ular update'da request.user'ni ishlatmaydi — admin uchun xavfsiz).
+from .serializers import (
+    EmployerVacancyWriteSerializer, VacancyDetailSerializer,
+    ResumeWriteSerializer, ResumeDetailSerializer,
+)
 
 
 # ══════════════════════════════════════════════
@@ -176,16 +182,25 @@ class AdminVacancyListView(generics.ListAPIView):
         return qs
 
 
-class AdminVacancyDetailView(generics.RetrieveDestroyAPIView):
+class AdminVacancyDetailView(generics.RetrieveUpdateDestroyAPIView):
     """
-    GET    /api/admin/vacancies/{id}/
+    GET    /api/admin/vacancies/{id}/   — to'liq ma'lumot (tahrirlash uchun)
+    PUT    /api/admin/vacancies/{id}/   — to'liq yangilash
+    PATCH  /api/admin/vacancies/{id}/   — qisman yangilash
     DELETE /api/admin/vacancies/{id}/   — majburan o'chirish
+
+    Admin har qanday vakansiyani tahrirlay oladi (egasidan qat'i nazar).
     """
-    serializer_class = AdminVacancySerializer
     permission_classes = [IsAuthenticated, IsAdmin]
     queryset = Vacancy.objects.select_related(
-        "employer", "organization", "profession", "region",
-    )
+        "employer", "organization", "profession", "region", "district", "industry",
+    ).prefetch_related("language_requirements")
+
+    def get_serializer_class(self):
+        # PUT/PATCH — to'liq write serializer (description, til talablari va h.k.)
+        if self.request.method in ("PUT", "PATCH"):
+            return EmployerVacancyWriteSerializer
+        return VacancyDetailSerializer
 
 
 class AdminVacancyToggleActiveView(APIView):
@@ -247,14 +262,24 @@ class AdminResumeListView(generics.ListAPIView):
         return qs
 
 
-class AdminResumeDetailView(generics.RetrieveDestroyAPIView):
+class AdminResumeDetailView(generics.RetrieveUpdateDestroyAPIView):
     """
-    GET    /api/admin/resumes/{id}/
+    GET    /api/admin/resumes/{id}/   — to'liq ma'lumot (tahrirlash uchun)
+    PUT    /api/admin/resumes/{id}/   — to'liq yangilash
+    PATCH  /api/admin/resumes/{id}/   — qisman yangilash
     DELETE /api/admin/resumes/{id}/
+
+    Admin har qanday rezyumeni tahrirlay oladi (egasidan qat'i nazar).
     """
-    serializer_class = AdminResumeSerializer
     permission_classes = [IsAuthenticated, IsAdmin]
-    queryset = Resume.objects.select_related("user", "profession", "region")
+    queryset = Resume.objects.select_related(
+        "user", "profession", "region", "district",
+    ).prefetch_related("skills", "languages", "work_experiences", "educations", "certificates")
+
+    def get_serializer_class(self):
+        if self.request.method in ("PUT", "PATCH"):
+            return ResumeWriteSerializer
+        return ResumeDetailSerializer
 
 
 class AdminResumeTogglePublishedView(APIView):

@@ -219,6 +219,10 @@ export const adminApi = {
     apiClient.get('/admin/vacancies/', { params }).then((r) => r.data),
   vacancyDetail: (id) =>
     apiClient.get(`/admin/vacancies/${id}/`).then((r) => r.data),
+  vacancyUpdate: (id, data) =>
+    apiClient.patch(`/admin/vacancies/${id}/`, data).then((r) => r.data),
+  vacancyDelete: (id) =>
+    apiClient.delete(`/admin/vacancies/${id}/`).then((r) => r.data),
   vacancyToggleActive: (id) =>
     apiClient.post(`/admin/vacancies/${id}/toggle-active/`).then((r) => r.data),
 
@@ -227,6 +231,10 @@ export const adminApi = {
     apiClient.get('/admin/resumes/', { params }).then((r) => r.data),
   resumeDetail: (id) =>
     apiClient.get(`/admin/resumes/${id}/`).then((r) => r.data),
+  resumeUpdate: (id, data) =>
+    apiClient.patch(`/admin/resumes/${id}/`, data).then((r) => r.data),
+  resumeDelete: (id) =>
+    apiClient.delete(`/admin/resumes/${id}/`).then((r) => r.data),
   resumeTogglePublished: (id) =>
     apiClient.post(`/admin/resumes/${id}/toggle-published/`).then((r) => r.data),
 
