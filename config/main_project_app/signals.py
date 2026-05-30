@@ -14,6 +14,7 @@ from django.dispatch import receiver
 
 from . import ai_tasks
 from .translation_service import translate_text
+from .reference_translations import lookup_static
 from .models import (
     Region, District, Profession, Skill,
     University, UniversityDirection, Industry,
@@ -70,18 +71,32 @@ def _translate_and_save(model_label: str, pk, base_field: str):
     if not getattr(instance, f"{base_field}_uz", ""):
         updates[f"{base_field}_uz"] = src
 
-    # ru va qaa uchun AI tarjima — faqat bo'sh bo'lganlarini
-    for lang in ("ru", "qaa"):
-        attr = f"{base_field}_{lang}"
-        if not getattr(instance, attr, ""):
-            try:
-                translated = translate_text(src, lang)
-                # Faqat AI haqiqatan ham boshqa narsa qaytarganda yangilash
-                if translated and translated != src:
-                    updates[attr] = translated
-            except Exception as e:
-                logger.warning("Auto-translate %s→%s xato (%s#%s): %s",
-                               base_field, lang, Model.__name__, pk, e)
+    # GIBRID: avval statik lug'atda bormi tekshiramiz (referens `name` uchun).
+    # Bo'lsa — darhol statik tarjima (Gemini'siz, ishonchli). Aks holda AI.
+    static_tr = None
+    if base_field == "name":
+        static_tr = lookup_static(Model.__name__, src)
+
+    if static_tr:
+        ru, qaa = static_tr
+        if not getattr(instance, f"{base_field}_ru", ""):
+            updates[f"{base_field}_ru"] = ru
+        if not getattr(instance, f"{base_field}_qaa", ""):
+            updates[f"{base_field}_qaa"] = qaa
+        logger.info("Static-translated %s#%s (%s)", Model.__name__, pk, src)
+    else:
+        # ru va qaa uchun AI tarjima — faqat bo'sh bo'lganlarini
+        for lang in ("ru", "qaa"):
+            attr = f"{base_field}_{lang}"
+            if not getattr(instance, attr, ""):
+                try:
+                    translated = translate_text(src, lang)
+                    # Faqat AI haqiqatan ham boshqa narsa qaytarganda yangilash
+                    if translated and translated != src:
+                        updates[attr] = translated
+                except Exception as e:
+                    logger.warning("Auto-translate %s→%s xato (%s#%s): %s",
+                                   base_field, lang, Model.__name__, pk, e)
 
     if updates:
         # filter().update() ishlatish — signal qayta trigger qilmaydi
