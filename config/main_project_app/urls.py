@@ -40,7 +40,7 @@ from .views import (
     VacancyLikeToggleView, LikedVacancyListView,
     # resume
     PublicResumeListView, PublicResumeDetailView, PublicResumeSimilarView,
-    MyResumeView, MyResumeViewsView,
+    MyResumeView, MyResumeViewsView, ImportResumeDocxView,
     WorkExperienceListCreateView, WorkExperienceDetailView,
     EducationListCreateView, EducationDetailView,
     CertificateListCreateView, CertificateDetailView,
@@ -104,6 +104,7 @@ urlpatterns = [
     # ─── REZYUMELAR ─────────────────────────────
     # Diqqat: "my/" "<int:pk>/" dan oldin
     path("resumes/my/",                                 MyResumeView.as_view(),                    name="my-resume"),
+    path("resumes/import-docx/",                        ImportResumeDocxView.as_view(),            name="resume-import-docx"),
     path("resumes/my/views/",                           MyResumeViewsView.as_view(),               name="my-resume-views"),
     path("resumes/my/work-experiences/",                WorkExperienceListCreateView.as_view(),    name="work-exp-list"),
     path("resumes/my/work-experiences/<int:pk>/",       WorkExperienceDetailView.as_view(),        name="work-exp-detail"),

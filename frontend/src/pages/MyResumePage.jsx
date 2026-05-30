@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Loader2, AlertCircle, CheckCircle2, Pencil, FileText, EyeOff } from 'lucide-react'
+import { Loader2, AlertCircle, CheckCircle2, Pencil, FileText, EyeOff, Upload, Download, Sparkles } from 'lucide-react'
 import { resumeSchema } from '@/lib/schemas'
 import {
   GENDER_OPTIONS,
@@ -10,7 +10,7 @@ import {
   WORK_MODE_OPTIONS,
   EMPLOYMENT_STATUS_OPTIONS,
 } from '@/lib/constants'
-import { useMyResume, useCreateResume, useUpdateResume } from '@/hooks/useResume'
+import { useMyResume, useCreateResume, useUpdateResume, useImportResumeDocx } from '@/hooks/useResume'
 import { useRegions, useDistricts, useProfessions } from '@/hooks/useReferences'
 import { applyApiErrorsToForm, getApiError } from '@/lib/apiError'
 import Input from '@/components/ui/Input'
@@ -401,7 +401,20 @@ function MyResumePage() {
   const { data: resume, isLoading } = useMyResume()
   const createMutation = useCreateResume()
   const updateMutation = useUpdateResume()
+  const importMutation = useImportResumeDocx()
   const [editing, setEditing] = useState(false)
+  const [importError, setImportError] = useState(null)
+
+  const handleImport = (e) => {
+    const file = e.target.files?.[0]
+    e.target.value = '' // bir xil faylni qayta yuklash mumkin bo'lsin
+    if (!file) return
+    setImportError(null)
+    importMutation.mutate(file, {
+      onSuccess: () => setEditing(true), // forma parse natijasi bilan ochiladi
+      onError: (err) => setImportError(getApiError(err) || 'Faylni o\'qib bo\'lmadi'),
+    })
+  }
 
   const handleCreate = (payload, setError) => {
     createMutation.mutate(payload, {
@@ -445,17 +458,84 @@ function MyResumePage() {
       </div>
 
       {!resume && !editing && (
-        <div className="bg-white rounded-2xl border border-gray-200 p-12 text-center">
-          <FileText className="w-14 h-14 text-gray-300 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">
-            Sizda hali rezyume yo'q
-          </h2>
-          <p className="text-gray-500 mb-6 max-w-md mx-auto">
-            Vakansiyalarga ariza yuborish va ish beruvchilar sizni topishi uchun rezyume yarating.
-          </p>
-          <Button onClick={() => setEditing(true)} size="lg">
-            Rezyume yaratish
-          </Button>
+        <div className="space-y-5">
+          {/* Word'dan AI bilan yuklash — tezkor yo'l */}
+          <div className="bg-gradient-to-br from-brand-50 to-purple-50 rounded-2xl border border-brand-200 p-6 sm:p-8">
+            <div className="flex items-start gap-3 mb-4">
+              <div className="w-11 h-11 rounded-xl bg-brand-500 flex items-center justify-center shrink-0">
+                <Sparkles className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900">
+                  Word'dan AI yordamida yarating
+                </h2>
+                <p className="text-sm text-gray-600 mt-0.5">
+                  Tayyor Word rezyumeingizni yuklang — sun'iy intellekt ma'lumotlarni
+                  o'qib, formani avtomatik to'ldiradi. Keyin tekshirib, saqlaysiz.
+                </p>
+              </div>
+            </div>
+
+            {importError && (
+              <div className="mb-4 bg-red-50 border border-red-200 text-red-700 p-3 rounded-lg flex items-start gap-2 text-sm">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>{importError}</span>
+              </div>
+            )}
+
+            <div className="flex flex-col sm:flex-row gap-3">
+              <a
+                href="/Rezyume_shablon.docx"
+                download
+                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-brand-200 text-brand-700 rounded-xl text-sm font-medium hover:bg-brand-50 transition"
+              >
+                <Download className="w-4 h-4" />
+                Shablonni yuklab olish
+              </a>
+
+              <label className={`inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition cursor-pointer ${
+                importMutation.isPending
+                  ? 'bg-brand-300 text-white cursor-wait'
+                  : 'bg-brand-500 text-white hover:bg-brand-600'
+              }`}>
+                {importMutation.isPending ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    AI rezyumengizni o'qiyapti...
+                  </>
+                ) : (
+                  <>
+                    <Upload className="w-4 h-4" />
+                    To'ldirilgan Word'ni yuklash
+                  </>
+                )}
+                <input
+                  type="file"
+                  accept=".docx"
+                  className="hidden"
+                  disabled={importMutation.isPending}
+                  onChange={handleImport}
+                />
+              </label>
+            </div>
+            <p className="text-xs text-gray-400 mt-3">
+              Faqat .docx format, 5MB gacha. Shablonni yuklab olib, to'ldiring va qaytadan yuklang.
+            </p>
+          </div>
+
+          {/* Yoki qo'lda */}
+          <div className="bg-white rounded-2xl border border-gray-200 p-8 text-center">
+            <FileText className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+            <h2 className="text-lg font-semibold text-gray-900 mb-1">
+              Yoki qo'lda to'ldiring
+            </h2>
+            <p className="text-gray-500 mb-5 max-w-md mx-auto text-sm">
+              Rezyumeni bosqichma-bosqich o'zingiz kiriting.
+            </p>
+            <Button onClick={() => setEditing(true)} size="lg">
+              Qo'lda rezyume yaratish
+            </Button>
+          </div>
         </div>
       )}
 

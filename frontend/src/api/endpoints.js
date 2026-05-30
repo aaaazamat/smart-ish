@@ -90,6 +90,16 @@ export const resumeApi = {
   update: (data) => apiClient.patch('/resumes/my/', data).then((r) => r.data),
   // "Mening rezyumemni kim ko'rdi" — statistika va oxirgi 50 ta ko'rilish
   getMyViews: () => apiClient.get('/resumes/my/views/').then((r) => r.data),
+  // Word (.docx) dan rezyume import — qoralama rezyume yaratadi
+  importDocx: (file) => {
+    const form = new FormData()
+    form.append('file', file)
+    return apiClient
+      .post('/resumes/import-docx/', form, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+      .then((r) => r.data)
+  },
 }
 
 export const workExperienceApi = crud('/resumes/my/work-experiences/')

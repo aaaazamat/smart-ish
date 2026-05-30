@@ -171,6 +171,7 @@ REST_FRAMEWORK = {
         "password_reset": "5/hour",    # parolni tiklash
         "password_change": "5/hour",   # logged-in parolni o'zgartirish
         "report": "10/hour",           # shikoyat yuborish
+        "resume_import": "10/hour",    # Word'dan rezyume import (AI + fayl)
     },
 }
 

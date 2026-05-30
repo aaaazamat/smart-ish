@@ -24,7 +24,7 @@ from .models import (
     User, Organization,
     Region, District, Profession, Skill,
     University, UniversityDirection, Industry,
-    Resume, WorkExperience, Education, Certificate,
+    Resume, WorkExperience, Education, Certificate, ResumeLanguage,
     Vacancy, VacancyLike, VacancyLanguageRequirement,
     Application, ResumeView, Notification,
 )
@@ -570,6 +570,109 @@ class MyResumeView(APIView):
         serializer.is_valid(raise_exception=True)
         resume = serializer.save()
         return Response(ResumeDetailSerializer(resume).data)
+
+
+class ImportResumeDocxView(APIView):
+    """
+    POST /api/resumes/import-docx/
+
+    Word (.docx) rezyumesini yuklaydi → AI/heuristik parse → QORALAMA rezyume
+    (is_published=False) + nested (ish tajribasi, ta'lim, til) yaratadi.
+    Foydalanuvchi keyin MyResumePage'da tahrirlab, e'lon qiladi.
+    """
+    permission_classes = [IsAuthenticated, IsJobSeeker]
+    parser_classes = [MultiPartParser]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "resume_import"
+
+    def post(self, request):
+        from .resume_parser import parse_resume
+
+        if hasattr(request.user, "resume"):
+            return Response(
+                {"detail": _("Rezyume allaqachon mavjud. Uni tahrirlang yoki o'chiring.")},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        uploaded = request.FILES.get("file")
+        if not uploaded:
+            return Response({"detail": _("Fayl yuborilmadi")}, status=status.HTTP_400_BAD_REQUEST)
+        if not uploaded.name.lower().endswith(".docx"):
+            return Response({"detail": _("Faqat .docx fayl qabul qilinadi")}, status=status.HTTP_400_BAD_REQUEST)
+        if uploaded.size > 5 * 1024 * 1024:
+            return Response({"detail": _("Fayl hajmi 5MB dan oshmasligi kerak")}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            data = parse_resume(uploaded)
+        except Exception as e:
+            return Response(
+                {"detail": _("Word faylini o'qib bo'lmadi: %(err)s") % {"err": str(e)[:100]}},
+                status=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            )
+
+        # Qoralama rezyume yaratish (majburiy maydonlar uchun xavfsiz default'lar)
+        resume = Resume.objects.create(
+            user=request.user,
+            first_name=(data.get("first_name") or "")[:100],
+            last_name=(data.get("last_name") or "")[:100],
+            middle_name=(data.get("middle_name") or "")[:100],
+            phone_number=(data.get("phone_number") or request.user.phone_number or "")[:15],
+            email=data.get("email") or request.user.email,
+            birth_date=data.get("birth_date") or "2000-01-01",
+            gender=data.get("gender") or Resume.Gender.MALE,
+            profession_id=data.get("profession_id"),
+            region_id=data.get("region_id"),
+            profession_detail=(data.get("profession_detail") or "")[:2000],
+            career_level=data.get("career_level") or Resume.CareerLevel.JUNIOR,
+            expected_salary=data.get("expected_salary") or None,
+            employment_type=data.get("employment_type") or Resume.EmploymentType.PERMANENT,
+            work_mode=data.get("work_mode") or Resume.WorkMode.OFFICE,
+            employment_status=data.get("employment_status") or Resume.EmploymentStatus.ACTIVELY_LOOKING,
+            is_published=False,  # qoralama — foydalanuvchi tekshirib e'lon qiladi
+        )
+
+        # Ko'nikmalar
+        if data.get("skill_ids"):
+            resume.skills.set(data["skill_ids"])
+
+        # Til bilimlari
+        for lang in (data.get("languages") or []):
+            ResumeLanguage.objects.get_or_create(
+                resume=resume, language=lang["language"],
+                defaults={"level": lang["level"]},
+            )
+
+        # Ish tajribasi
+        for we in (data.get("work_experiences") or []):
+            if not (we.get("position") or we.get("organization_name")):
+                continue
+            WorkExperience.objects.create(
+                resume=resume,
+                organization_name=(we.get("organization_name") or "")[:255],
+                position=(we.get("position") or "")[:255],
+                start_month=we.get("start_month") or 1,
+                start_year=we.get("start_year") or 2020,
+                end_month=we.get("end_month"),
+                end_year=we.get("end_year"),
+                is_current=bool(we.get("is_current")),
+                responsibilities=(we.get("responsibilities") or "")[:2000],
+            )
+
+        # Ta'lim
+        for edu in (data.get("educations") or []):
+            WorkExp_year = edu.get("start_year") or 2018
+            Education.objects.create(
+                resume=resume,
+                degree_level=edu.get("degree_level") or Education.DegreeLevel.BACHELOR,
+                start_year=WorkExp_year,
+                end_year=edu.get("end_year"),
+                is_studying=bool(edu.get("is_studying")),
+            )
+
+        return Response(
+            ResumeDetailSerializer(resume).data,
+            status=status.HTTP_201_CREATED,
+        )
 
 
 class MyResumeViewsView(APIView):

@@ -50,6 +50,18 @@ export function useUpdateResume() {
   })
 }
 
+/**
+ * Word (.docx) dan rezyume import — qoralama rezyume yaratadi.
+ * Muvaffaqiyatda 'my-resume' qayta yuklanadi (forma to'ladi).
+ */
+export function useImportResumeDocx() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (file) => resumeApi.importDocx(file),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['my-resume'] }),
+  })
+}
+
 function makeCrudHooks(api, queryKey) {
   return {
     useList: () => useQuery({
