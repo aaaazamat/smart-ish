@@ -34,6 +34,15 @@ echo "────────────────────────�
 python manage.py migrate --no-input
 
 # ────────────────────────────────────────────────────────────────
+# Referens ma'lumotlar tarjimasi (viloyat, soha, kasb, tuman) — STATIK
+# lug'at orqali, Gemini API'ga bog'liq EMAS. Har doim ishga tushadi,
+# idempotent (faqat bo'sh maydonlarni to'ldiradi).
+# ────────────────────────────────────────────────────────────────
+echo ""
+echo "Referens tarjimalari (statik lug'at)..."
+python manage.py seed_translations || echo "Tarjima o'tkazib yuborildi (davom etiladi)"
+
+# ────────────────────────────────────────────────────────────────
 # Bootstrap admin foydalanuvchi yaratish (faqat env vars berilgan bo'lsa)
 # Render free tier'da Shell yo'q, shuning uchun admin avtomatik yaratiladi.
 # Birinchi deploy'da yangi admin yaratiladi, keyingilarida `--update`
