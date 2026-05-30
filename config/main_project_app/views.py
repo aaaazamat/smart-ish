@@ -808,13 +808,21 @@ class MyApplicationStatsView(APIView):
         })
 
 
-def _compute_top_vacancies_for_user(user_id: int) -> dict:
-    """Job seeker uchun top 5 vakansiyani AI bilan hisoblash (sof funksiya)."""
-    from main_project_app.ai_services import calculate_match, AIServiceError
+def _compute_top_vacancies_for_user(user_id: int, lang: str = "uz") -> dict:
+    """Job seeker uchun top vakansiyalar — GIBRID (algoritmik + AI).
+
+    1. Barcha aktiv vakansiyalarni algoritmik skoring (tez, bepul)
+    2. Eng yuqori 5 tasini AI bilan chuqur tahlil (xulosa)
+    3. AI ishlamasa — algoritmik natija (fallback)
+    """
+    from main_project_app.ai_services import calculate_match
+    from main_project_app.matching_service import algorithmic_match
     from concurrent.futures import ThreadPoolExecutor, as_completed
 
     try:
-        user = User.objects.select_related("resume", "resume__profession", "resume__region").get(pk=user_id)
+        user = User.objects.select_related(
+            "resume", "resume__profession", "resume__region"
+        ).get(pk=user_id)
     except User.DoesNotExist:
         return {"detail": "Foydalanuvchi topilmadi", "matched": []}
 
@@ -822,53 +830,68 @@ def _compute_top_vacancies_for_user(user_id: int) -> dict:
         return {"detail": "Rezyume yaratilmagan", "matched": []}
 
     resume = user.resume
-    vacancies_qs = (
+    vacancies = list(
         Vacancy.objects.filter(is_active=True)
         .select_related("profession", "industry", "organization", "region")
+        .prefetch_related("language_requirements")[:60]
     )
-    primary = list(
-        vacancies_qs.filter(
-            db_models.Q(profession=resume.profession) |
-            db_models.Q(region=resume.region)
-        ).distinct()[:8]
-    )
-    if len(primary) < 3:
-        extra_ids = [v.id for v in primary]
-        primary += list(vacancies_qs.exclude(id__in=extra_ids)[: (8 - len(primary))])
-
-    if not primary:
+    if not vacancies:
         return {"matched": []}
 
-    def score_vacancy(vacancy):
+    # 1) Algoritmik skoring — barcha vakansiyalar (Gemini'siz)
+    scored = [(v, algorithmic_match(resume, v)) for v in vacancies]
+    scored.sort(key=lambda x: x[1]["score"], reverse=True)
+    top = scored[:5]
+
+    # 2) Top 5 ni AI bilan chuqur tahlil (parallel)
+    def deep(vacancy, algo):
+        item = {
+            "vacancy_id": vacancy.id,
+            "profession_name": vacancy.profession.name if vacancy.profession else "Vakansiya",
+            "organization_name": vacancy.organization.name if vacancy.organization else None,
+            "region_name": vacancy.region.name if vacancy.region else None,
+            "salary_from": vacancy.salary_from,
+            "salary_to": vacancy.salary_to,
+            "score": algo["score"],
+            "matched": (algo["matched"] or [])[:3],
+            "summary": "; ".join((algo["matched"] or [])[:2]) or "Algoritmik moslik",
+            "ai": False,
+        }
         try:
-            m = calculate_match(resume, vacancy, lang=getattr(request, "LANGUAGE_CODE", "uz") or "uz")
-            return {
-                "vacancy_id": vacancy.id,
-                "profession_name": vacancy.profession.name if vacancy.profession else "Vakansiya",
-                "organization_name": vacancy.organization.name if vacancy.organization else None,
-                "region_name": vacancy.region.name if vacancy.region else None,
-                "salary_from": vacancy.salary_from,
-                "salary_to": vacancy.salary_to,
-                "score": m["score"],
-                "summary": m["summary"],
-                "matched": (m["matched"] or [])[:3],
-            }
-        except (AIServiceError, Exception):
-            return None
+            m = calculate_match(resume, vacancy, lang=lang)
+            # AI va algoritmik ballarning o'rtachasi — muvozanatli natija
+            item["score"] = int(round((algo["score"] + m["score"]) / 2))
+            if m.get("summary"):
+                item["summary"] = m["summary"]
+            if m.get("matched"):
+                item["matched"] = (m["matched"] or [])[:3]
+            item["ai"] = True
+        except Exception:
+            pass  # fallback: algoritmik natija (yuqorida)
+        return item
 
     results = []
     try:
         with ThreadPoolExecutor(max_workers=4) as executor:
-            futures = [executor.submit(score_vacancy, v) for v in primary]
-            for f in as_completed(futures, timeout=90):
-                res = f.result()
-                if res:
-                    results.append(res)
+            futures = [executor.submit(deep, v, algo) for v, algo in top]
+            for f in as_completed(futures, timeout=60):
+                results.append(f.result())
     except TimeoutError:
-        pass
+        # AI ulgurmasa — algoritmik natijani qaytaramiz
+        results = [{
+            "vacancy_id": v.id,
+            "profession_name": v.profession.name if v.profession else "Vakansiya",
+            "organization_name": v.organization.name if v.organization else None,
+            "region_name": v.region.name if v.region else None,
+            "salary_from": v.salary_from, "salary_to": v.salary_to,
+            "score": algo["score"],
+            "matched": (algo["matched"] or [])[:3],
+            "summary": "; ".join((algo["matched"] or [])[:2]) or "Algoritmik moslik",
+            "ai": False,
+        } for v, algo in top]
 
     results.sort(key=lambda x: x["score"], reverse=True)
-    return {"matched": results[:5]}
+    return {"matched": results}
 
 
 class AiTopVacanciesForMeView(APIView):
@@ -886,11 +909,13 @@ class AiTopVacanciesForMeView(APIView):
     def get(self, request):
         is_async = request.query_params.get("async", "").lower() in ("true", "1", "yes")
 
+        lang = getattr(request, "LANGUAGE_CODE", "uz") or "uz"
         if is_async:
             from main_project_app import ai_tasks
             task_id = ai_tasks.submit(
                 _compute_top_vacancies_for_user,
                 request.user.id,
+                lang,
                 owner_id=request.user.id,
             )
             return Response(
@@ -902,75 +927,86 @@ class AiTopVacanciesForMeView(APIView):
                 status=status.HTTP_202_ACCEPTED,
             )
 
-        # Sinxron rejim — eski xulq-atvor
-        result = _compute_top_vacancies_for_user(request.user.id)
+        # Sinxron rejim
+        result = _compute_top_vacancies_for_user(request.user.id, lang)
         if not result.get("matched") and "detail" in result:
             return Response(result, status=status.HTTP_400_BAD_REQUEST)
         return Response(result)
 
 
-def _compute_top_resumes_for_vacancy(vacancy_id: int, employer_id: int) -> dict:
-    """Vakansiyaga eng mos top 5 nomzodni AI bilan hisoblash (sof funksiya)."""
-    from main_project_app.ai_services import calculate_match, AIServiceError
+def _compute_top_resumes_for_vacancy(vacancy_id: int, employer_id: int, lang: str = "uz") -> dict:
+    """Vakansiyaga eng mos nomzodlar — GIBRID (algoritmik + AI).
+
+    1. Barcha nashr etilgan rezyumelarni algoritmik skoring (tez, bepul)
+    2. Eng yuqori 5 tasini AI bilan chuqur tahlil (xulosa)
+    3. AI ishlamasa — algoritmik natija (fallback)
+    """
+    from main_project_app.ai_services import calculate_match
+    from main_project_app.matching_service import algorithmic_match
     from concurrent.futures import ThreadPoolExecutor, as_completed
 
     try:
         vacancy = Vacancy.objects.select_related(
             "profession", "industry", "region"
-        ).get(pk=vacancy_id, employer_id=employer_id)
+        ).prefetch_related("language_requirements").get(pk=vacancy_id, employer_id=employer_id)
     except Vacancy.DoesNotExist:
         return {"detail": "Vakansiya topilmadi", "matched": []}
 
-    candidates_qs = (
+    candidates = list(
         Resume.objects.filter(is_published=True)
         .select_related("profession", "region")
-        .prefetch_related("skills", "work_experiences")
-        .distinct()
+        .prefetch_related("skills", "work_experiences", "languages")
+        .distinct()[:60]
     )
-    primary = list(
-        candidates_qs.filter(
-            db_models.Q(profession=vacancy.profession) |
-            db_models.Q(region=vacancy.region)
-        )[:8]
-    )
-    if len(primary) < 3:
-        extra_ids = [r.id for r in primary]
-        primary += list(candidates_qs.exclude(id__in=extra_ids)[: (8 - len(primary))])
-
-    if not primary:
+    if not candidates:
         return {"matched": []}
 
-    def score_candidate(resume):
+    # 1) Algoritmik skoring — barcha nomzodlar (Gemini'siz)
+    scored = [(r, algorithmic_match(r, vacancy)) for r in candidates]
+    scored.sort(key=lambda x: x[1]["score"], reverse=True)
+    top = scored[:5]
+
+    def _base_item(resume, algo):
+        full_name = " ".join(filter(None, [resume.last_name, resume.first_name]))
+        return {
+            "resume_id": resume.id,
+            "full_name": full_name or "Nomzod",
+            "profession_name": resume.profession.name if resume.profession else None,
+            "career_level_display": resume.get_career_level_display(),
+            "region_name": resume.region.name if resume.region else None,
+            "expected_salary": resume.expected_salary,
+            "score": algo["score"],
+            "matched": (algo["matched"] or [])[:3],
+            "summary": "; ".join((algo["matched"] or [])[:2]) or "Algoritmik moslik",
+            "ai": False,
+        }
+
+    # 2) Top 5 ni AI bilan chuqur tahlil (parallel)
+    def deep(resume, algo):
+        item = _base_item(resume, algo)
         try:
-            m = calculate_match(resume, vacancy, lang=getattr(request, "LANGUAGE_CODE", "uz") or "uz")
-            full_name = " ".join(filter(None, [resume.last_name, resume.first_name]))
-            return {
-                "resume_id": resume.id,
-                "full_name": full_name or "Nomzod",
-                "profession_name": resume.profession.name if resume.profession else None,
-                "career_level_display": resume.get_career_level_display(),
-                "region_name": resume.region.name if resume.region else None,
-                "expected_salary": resume.expected_salary,
-                "score": m["score"],
-                "summary": m["summary"],
-                "matched": (m["matched"] or [])[:3],
-            }
-        except (AIServiceError, Exception):
-            return None
+            m = calculate_match(resume, vacancy, lang=lang)
+            item["score"] = int(round((algo["score"] + m["score"]) / 2))
+            if m.get("summary"):
+                item["summary"] = m["summary"]
+            if m.get("matched"):
+                item["matched"] = (m["matched"] or [])[:3]
+            item["ai"] = True
+        except Exception:
+            pass  # fallback: algoritmik
+        return item
 
     results = []
     try:
         with ThreadPoolExecutor(max_workers=4) as executor:
-            futures = [executor.submit(score_candidate, r) for r in primary]
-            for f in as_completed(futures, timeout=90):
-                res = f.result()
-                if res:
-                    results.append(res)
+            futures = [executor.submit(deep, r, algo) for r, algo in top]
+            for f in as_completed(futures, timeout=60):
+                results.append(f.result())
     except TimeoutError:
-        pass
+        results = [_base_item(r, algo) for r, algo in top]
 
     results.sort(key=lambda x: x["score"], reverse=True)
-    return {"matched": results[:5]}
+    return {"matched": results}
 
 
 class AiVacancyTopMatchedResumesView(APIView):
@@ -983,12 +1019,14 @@ class AiVacancyTopMatchedResumesView(APIView):
     def get(self, request, vacancy_id):
         is_async = request.query_params.get("async", "").lower() in ("true", "1", "yes")
 
+        lang = getattr(request, "LANGUAGE_CODE", "uz") or "uz"
         if is_async:
             from main_project_app import ai_tasks
             task_id = ai_tasks.submit(
                 _compute_top_resumes_for_vacancy,
                 vacancy_id,
                 request.user.id,
+                lang,
                 owner_id=request.user.id,
             )
             return Response(
@@ -1000,7 +1038,7 @@ class AiVacancyTopMatchedResumesView(APIView):
                 status=status.HTTP_202_ACCEPTED,
             )
 
-        result = _compute_top_resumes_for_vacancy(vacancy_id, request.user.id)
+        result = _compute_top_resumes_for_vacancy(vacancy_id, request.user.id, lang)
         if "detail" in result:
             return Response(result, status=status.HTTP_404_NOT_FOUND)
         return Response(result)
