@@ -658,15 +658,28 @@ class ImportResumeDocxView(APIView):
                 responsibilities=(we.get("responsibilities") or "")[:2000],
             )
 
-        # Ta'lim
+        # Ta'lim (university/direction FK parse natijasida moslangan)
         for edu in (data.get("educations") or []):
-            WorkExp_year = edu.get("start_year") or 2018
             Education.objects.create(
                 resume=resume,
                 degree_level=edu.get("degree_level") or Education.DegreeLevel.BACHELOR,
-                start_year=WorkExp_year,
+                university_id=edu.get("university_id"),
+                direction_id=edu.get("direction_id"),
+                start_year=edu.get("start_year") or 2018,
                 end_year=edu.get("end_year"),
                 is_studying=bool(edu.get("is_studying")),
+            )
+
+        # Sertifikatlar
+        from django.utils import timezone as _tz
+        for cert in (data.get("certificates") or []):
+            nm = (cert.get("name") or "").strip()
+            if not nm:
+                continue
+            Certificate.objects.create(
+                resume=resume,
+                name=nm[:255],
+                issued_date=cert.get("issued_date") or _tz.now().date(),
             )
 
         return Response(

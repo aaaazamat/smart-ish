@@ -15,7 +15,7 @@ from django.conf import settings
 from .ai_services import _call_gemini, AIServiceError
 from .translation_service import _translate_keys
 from .models import (
-    Profession, Region, Skill,
+    Profession, Region, Skill, University, UniversityDirection,
 )
 
 logger = logging.getLogger(__name__)
@@ -25,22 +25,77 @@ logger = logging.getLogger(__name__)
 # 1) DOCX → matn
 # ─────────────────────────────────────────────
 
+def _para_full_text(para) -> str:
+    """Paragraf matni + havola (hyperlink) matnini birlashtiradi.
+
+    python-docx'da para.text giperhavola matnini o'z ichiga olmaydi —
+    LinkedIn/email havolalarini yo'qotmaslik uchun alohida qo'shamiz.
+    """
+    parts = [para.text or ""]
+    try:
+        for hl in para.hyperlinks:
+            if hl.text and hl.text not in parts[0]:
+                parts.append(hl.text)
+    except Exception:
+        pass
+    return " ".join(p for p in parts if p).strip()
+
+
 def extract_text_from_docx(uploaded_file) -> str:
-    """Yuklangan .docx fayldan barcha matnni (paragraf + jadval) oladi."""
+    """Yuklangan .docx fayldan MAKSIMAL matnni oladi.
+
+    Qamrab oladi: body paragraflar (+ havolalar), jadvallar (qatorma-qator),
+    sarlavha (header) va quyi yozuv (footer). Ro'yxatlar ham para.text orqali keladi.
+    Universal — har qanday docx strukturasi (shablon shart emas).
+    """
     import docx  # python-docx
 
     document = docx.Document(uploaded_file)
     lines = []
-    for para in document.paragraphs:
-        t = (para.text or "").strip()
-        if t:
-            lines.append(t)
-    # Jadvallardagi matn ham (ba'zi shablonlar jadval ishlatadi)
-    for table in document.tables:
-        for row in table.rows:
-            cells = [c.text.strip() for c in row.cells if c.text.strip()]
-            if cells:
-                lines.append(" | ".join(cells))
+
+    # 1) Header (ba'zi rezyumelarda ism/kontakt header'da bo'ladi)
+    seen_headers = set()
+    for section in document.sections:
+        try:
+            for para in section.header.paragraphs:
+                t = _para_full_text(para)
+                if t and t not in seen_headers:
+                    seen_headers.add(t)
+                    lines.append(t)
+        except Exception:
+            pass
+
+    # 2) Body — paragraf va jadvallar HUJJAT TARTIBIDA
+    #    (python-docx body elementlarini ketma-ket o'qiymiz)
+    from docx.table import Table
+    from docx.text.paragraph import Paragraph
+
+    body = document.element.body
+    for child in body.iterchildren():
+        if child.tag.endswith("}p"):
+            para = Paragraph(child, document)
+            t = _para_full_text(para)
+            if t:
+                lines.append(t)
+        elif child.tag.endswith("}tbl"):
+            table = Table(child, document)
+            for row in table.rows:
+                cells = [c.text.strip() for c in row.cells if c.text.strip()]
+                if cells:
+                    lines.append("  ".join(dict.fromkeys(cells)))  # takror celllarni olib tashlash
+
+    # 3) Footer
+    seen_footers = set()
+    for section in document.sections:
+        try:
+            for para in section.footer.paragraphs:
+                t = _para_full_text(para)
+                if t and t not in seen_footers:
+                    seen_footers.add(t)
+                    lines.append(t)
+        except Exception:
+            pass
+
     return "\n".join(lines)
 
 
@@ -48,61 +103,100 @@ def extract_text_from_docx(uploaded_file) -> str:
 # 2) AI parse (Gemini JSON-mode)
 # ─────────────────────────────────────────────
 
-_AI_PROMPT = """Sen rezyume tahlilchisisan. Quyidagi rezyume matnidan strukturali
-ma'lumotni ajrat va FAQAT JSON qaytar (boshqa hech narsa yozma).
+_AI_PROMPT = """Sen tajribali HR va rezyume tahlilchisisan. Quyida HAR QANDAY
+formatdagi (har xil shablon, til yoki erkin tuzilgan) rezyume matni berilgan.
+Undagi ma'lumotni chuqur tushunib, strukturali ajrat va FAQAT JSON qaytar.
 
-JSON sxemasi (maydon yo'q bo'lsa null yoki bo'sh massiv qoldir):
+MUHIM:
+- Matn tartibsiz yoki boshqa shablonda bo'lsa ham, mazmunidan tushunib ajrat.
+- Sarlavhalar boshqacha bo'lsa ham (masalan "Work History"="Ish tajribasi",
+  "Education"="Ta'lim", "Skills"="Ko'nikmalar") mazmun bo'yicha joylashtir.
+- Namuna/placeholder matn ("ISM FAMILIYA", "Lavozim nomi", "masalan...") bo'lsa,
+  uni HAQIQIY ma'lumot deb OLMA — bo'sh qoldir.
+- Faqat JSON, boshqa hech narsa yozma.
+
+JSON sxemasi (maydon yo'q bo'lsa null yoki bo'sh massiv):
 {
   "first_name": "ism",
   "last_name": "familiya",
   "middle_name": "otasining ismi yoki bo'sh",
-  "phone_number": "+998... formatida yoki null",
+  "phone_number": "+998XXXXXXXXX yoki null",
   "email": "email yoki null",
   "profession": "kasb/lavozim nomi",
   "profession_detail": "qisqacha ma'lumot / o'zi haqida (2-4 jumla)",
   "career_level": "beginner|junior|middle|fresh_graduate|experienced",
   "expected_salary": null yoki son (so'mda),
   "region": "viloyat/shahar nomi yoki null",
-  "skills": ["ko'nikma1", "ko'nikma2", ...],
+  "skills": ["ko'nikma1", "ko'nikma2"],
   "work_experiences": [
-    {"position":"lavozim","organization_name":"kompaniya","start_year":2021,"start_month":1,"end_year":2023,"end_month":12,"is_current":false,"responsibilities":"vazifalar"}
+    {"position":"lavozim","organization_name":"kompaniya","start_year":2021,"start_month":1,"end_year":2023,"end_month":12,"is_current":false,"responsibilities":"vazifa/yutuqlar"}
   ],
   "educations": [
-    {"degree_level":"secondary_special|bachelor|master|phd","university":"OTM nomi","direction":"yo'nalish","start_year":2017,"end_year":2021,"is_studying":false}
+    {"degree_level":"secondary_special|bachelor|master|phd","university":"OTM to'liq nomi","direction":"yo'nalish/mutaxassislik","start_year":2017,"end_year":2021,"is_studying":false}
   ],
   "languages": [
-    {"language":"uz|ru|en|tr|ko|zh|de","level":"A1|A2|B1|B2|C1|C2"}
+    {"language":"uz|ru|en|tr|ko|zh|de|ja|ar","level":"A1|A2|B1|B2|C1|C2"}
+  ],
+  "certificates": [
+    {"name":"sertifikat/kurs nomi","issued_date":"YYYY-MM-DD yoki null"}
   ]
 }
 
 Qoidalar:
-- Til darajasi: "ona tili"→C2, "erkin/свободно/fluent"→C1, "o'rta"→B1, agar A1-C2 ko'rsatilgan bo'lsa o'sha.
-- is_current: hozir ishlayotgan bo'lsa true (sana "Hozirgacha"/"hozir").
-- career_level: tajribaga qarab taxmin qil (0 yil→beginner, 1-2→junior, 3-5→middle, 5+→experienced, yangi bitiruvchi→fresh_graduate).
+- Til darajasi: "ona tili/native/родной"→C2, "erkin/свободно/fluent"→C1,
+  "yuqori/upper"→B2, "o'rta/intermediate/средний"→B1, "boshlang'ich"→A1,
+  A1-C2 ko'rsatilgan bo'lsa o'sha.
+- is_current: "Hozirgacha/hozir/present/current" bo'lsa true.
+- career_level: tajriba yiliga qarab (0→beginner, 1-2→junior, 3-5→middle,
+  5+→experienced, yangi bitiruvchi→fresh_graduate).
+- degree_level: "bakalavr/bachelor"→bachelor, "magistr/master"→master,
+  "PhD/doktor"→phd, "o'rta maxsus/kollej"→secondary_special.
 - Telefonni +998XXXXXXXXX formatiga keltir.
+- responsibilities: vazifa va yutuqlarni qisqa, bitta matnda birlashtir.
 
 REZYUME MATNI:
 """
 
 
-def parse_with_ai(text: str) -> dict:
-    """Gemini JSON-mode bilan rezyume matnini strukturalashtirish."""
-    keys = _translate_keys()  # tarjima kalitlari (round-robin hovuzi)
-    api_key = keys[0] if keys else getattr(settings, "GEMINI_API_KEY", "")
-    model = getattr(settings, "GEMINI_TRANSLATE_MODEL", None)
+# Parse uchun modellar: avval eng kuchli (sifat), keyin tejamkor (ko'p quota).
+PARSE_MODELS = ["gemini-2.5-flash", "gemini-2.0-flash-lite"]
 
-    raw = _call_gemini(
-        prompt=_AI_PROMPT + text[:8000],  # juda uzun bo'lsa kesamiz
-        temperature=0.1,
-        max_tokens=3000,
-        response_mime_type="application/json",
-        api_key=api_key,
-        model=model,
-    )
-    data = json.loads(raw)
-    if not isinstance(data, dict):
-        raise ValueError("AI noto'g'ri format qaytardi")
-    return data
+
+def parse_with_ai(text: str) -> dict:
+    """Gemini JSON-mode bilan rezyume matnini strukturalashtirish.
+
+    Eng kuchli model (gemini-2.5-flash) bilan boshlaydi; quota tugasa
+    tejamkor modelга (gemini-2.0-flash-lite) o'tadi. Har model uchun barcha
+    mavjud kalitlarni sinaydi (round-robin hovuzi).
+    """
+    keys = _translate_keys() or [getattr(settings, "GEMINI_API_KEY", "")]
+    keys = [k for k in keys if k]
+    if not keys:
+        raise AIServiceError("Gemini kaliti sozlanmagan")
+
+    prompt = _AI_PROMPT + text[:10000]  # uzun rezyume ham sig'sin
+    last_err = None
+
+    for model in PARSE_MODELS:
+        for api_key in keys:
+            try:
+                raw = _call_gemini(
+                    prompt=prompt,
+                    temperature=0.1,
+                    max_tokens=4000,
+                    response_mime_type="application/json",
+                    api_key=api_key,
+                    model=model,
+                )
+                data = json.loads(raw)
+                if isinstance(data, dict) and data:
+                    logger.info("Resume AI-parse OK (model=%s)", model)
+                    return data
+            except (AIServiceError, json.JSONDecodeError, ValueError) as e:
+                last_err = e
+                continue  # keyingi kalit yoki model
+
+    raise AIServiceError(f"AI parse muvaffaqiyatsiz: {last_err}")
 
 
 # ─────────────────────────────────────────────
@@ -297,6 +391,33 @@ def match_skills(names):
     return ids
 
 
+def match_university(name):
+    """OTM nomini ID'ga moslaydi; topilmaganini yaratadi (None agar bo'sh)."""
+    nm = (name or "").strip()
+    if not nm or len(nm) > 255:
+        return None
+    pk = _best_match(nm, University.objects.values_list("id", "name"))
+    if pk:
+        return pk
+    obj, _ = University.objects.get_or_create(name=nm, defaults={"name_uz": nm})
+    return obj.id
+
+
+def match_direction(name, university_id):
+    """Yo'nalish nomini OTM ichida moslaydi; topilmaganini yaratadi."""
+    nm = (name or "").strip()
+    if not nm or len(nm) > 255 or not university_id:
+        return None
+    qs = UniversityDirection.objects.filter(university_id=university_id)
+    pk = _best_match(nm, qs.values_list("id", "name"))
+    if pk:
+        return pk
+    obj, _ = UniversityDirection.objects.get_or_create(
+        university_id=university_id, name=nm, defaults={"name_uz": nm},
+    )
+    return obj.id
+
+
 _VALID_CAREER = {"beginner", "junior", "middle", "fresh_graduate", "experienced"}
 _VALID_DEGREE = {"secondary_special", "bachelor", "master", "phd"}
 _VALID_LANG = {"uz", "ru", "en", "tr", "ko", "zh", "de", "ja", "hi", "es",
@@ -328,22 +449,44 @@ def _apply_fk_mapping(parsed: dict) -> dict:
             langs.append({"language": code, "level": lvl})
     out["languages"] = langs
 
-    # Educations — degree_level tekshirish
+    # Educations — degree_level + university/direction FK mapping
     edus = []
     for e in (parsed.get("educations") or []):
         dl = e.get("degree_level")
         if dl not in _VALID_DEGREE:
             dl = "bachelor"
+        uni_id = match_university(e.get("university"))
+        dir_id = match_direction(e.get("direction"), uni_id)
         edus.append({
             "degree_level": dl,
+            "university_id": uni_id,
+            "direction_id": dir_id,
             "start_year": e.get("start_year"),
             "end_year": e.get("end_year"),
             "is_studying": bool(e.get("is_studying")),
-            # university/direction matn — hozircha saqlanmaydi (FK murakkab),
-            # foydalanuvchi formada qo'shadi. Lekin natijaga izoh sifatida qaytaramiz.
-            "_university_name": e.get("university"),
-            "_direction_name": e.get("direction"),
         })
     out["educations"] = edus
 
+    # Certificates
+    certs = []
+    for c in (parsed.get("certificates") or []):
+        nm = (c.get("name") or "").strip()
+        if nm and len(nm) <= 255:
+            certs.append({"name": nm, "issued_date": _normalize_date(c.get("issued_date"))})
+    out["certificates"] = certs
+
     return out
+
+
+def _normalize_date(raw):
+    """'YYYY-MM-DD' yoki 'YYYY' kabi matnni sanaga keltiradi (None agar yaroqsiz)."""
+    if not raw:
+        return None
+    s = str(raw).strip()
+    m = re.match(r"(\d{4})-(\d{2})-(\d{2})", s)
+    if m:
+        return s[:10]
+    m = re.match(r"(\d{4})", s)
+    if m:
+        return f"{m.group(1)}-01-01"  # faqat yil bo'lsa
+    return None
