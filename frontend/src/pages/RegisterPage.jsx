@@ -129,7 +129,8 @@ function StepJobSeeker({ email, onBack }) {
 
   const onSubmit = (values) => {
     registerMutation.mutate(values, {
-      onSuccess: () => navigate('/', { replace: true }),
+      // Ro'yxatdan o'tgach to'g'ridan-to'g'ri rezyume yaratish sahifasiga
+      onSuccess: () => navigate('/resumes/my', { replace: true }),
       onError: (error) => applyApiErrorsToForm(error, setError),
     })
   }
