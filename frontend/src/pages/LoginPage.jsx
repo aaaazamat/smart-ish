@@ -38,7 +38,8 @@ function LoginPage() {
           const role = data?.role
           if (role === 'admin') target = '/admin/dashboard'
           else if (role === 'employer') target = '/employer/dashboard'
-          else target = '/'  // job_seeker yoki guest — bosh sahifa
+          else if (role === 'job_seeker') target = '/resumes/my'  // rezyume sahifasi
+          else target = '/'  // guest — bosh sahifa
         }
         navigate(target, { replace: true })
       },
