@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useForm, Controller } from 'react-hook-form'
+import { useTranslation } from 'react-i18next'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Loader2, AlertCircle, CheckCircle2, Pencil, FileText, EyeOff, Upload, Download, Sparkles } from 'lucide-react'
 import { resumeSchema } from '@/lib/schemas'
@@ -34,6 +35,7 @@ function Section({ title, children }) {
 }
 
 function ResumeForm({ initialData, onSubmit, isPending, error, onCancel }) {
+  const { t } = useTranslation()
   const isEdit = !!initialData
 
   const {
@@ -110,29 +112,29 @@ function ResumeForm({ initialData, onSubmit, isPending, error, onCancel }) {
         </div>
       )}
 
-      <Section title="Shaxsiy ma'lumotlar">
+      <Section title={t('resume.section_personal')}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField label="Familiya *" error={errors.last_name?.message}>
+          <FormField label={`${t('resume.f_last_name')} *`} error={errors.last_name?.message}>
             <Input error={!!errors.last_name} {...register('last_name')} />
           </FormField>
-          <FormField label="Ism *" error={errors.first_name?.message}>
+          <FormField label={`${t('resume.f_first_name')} *`} error={errors.first_name?.message}>
             <Input error={!!errors.first_name} {...register('first_name')} />
           </FormField>
-          <FormField label="Otasining ismi" error={errors.middle_name?.message}>
+          <FormField label={t('resume.f_middle_name')} error={errors.middle_name?.message}>
             <Input error={!!errors.middle_name} {...register('middle_name')} />
           </FormField>
-          <FormField label="Telefon raqami *" error={errors.phone_number?.message}>
+          <FormField label={`${t('resume.f_phone')} *`} error={errors.phone_number?.message}>
             <Input type="tel" error={!!errors.phone_number} {...register('phone_number')} />
           </FormField>
-          <FormField label="Email" error={errors.email?.message}>
+          <FormField label={t('resume.f_email')} error={errors.email?.message}>
             <Input type="email" error={!!errors.email} {...register('email')} />
           </FormField>
-          <FormField label="Tug'ilgan sana *" error={errors.birth_date?.message}>
+          <FormField label={`${t('resume.f_birth_date')} *`} error={errors.birth_date?.message}>
             <Input type="date" error={!!errors.birth_date} {...register('birth_date')} />
           </FormField>
-          <FormField label="Jins *" error={errors.gender?.message}>
+          <FormField label={`${t('resume.f_gender')} *`} error={errors.gender?.message}>
             <Select error={!!errors.gender} {...register('gender')}>
-              <option value="">Tanlang</option>
+              <option value="">{t('resume.select')}</option>
               {GENDER_OPTIONS.map((o) => (
                 <option key={o.value} value={o.value}>{o.label}</option>
               ))}
@@ -141,19 +143,19 @@ function ResumeForm({ initialData, onSubmit, isPending, error, onCancel }) {
         </div>
       </Section>
 
-      <Section title="Yashash joyi">
+      <Section title={t('resume.section_location')}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField label="Hudud" error={errors.region?.message}>
+          <FormField label={t('resume.f_region')} error={errors.region?.message}>
             <Select error={!!errors.region} {...register('region')}>
-              <option value="">Tanlang</option>
+              <option value="">{t('resume.select')}</option>
               {regions?.map((r) => (
                 <option key={r.id} value={r.id}>{r.name}</option>
               ))}
             </Select>
           </FormField>
-          <FormField label="Tuman / Shahar" error={errors.district?.message}>
+          <FormField label={t('resume.f_district')} error={errors.district?.message}>
             <Select error={!!errors.district} disabled={!regionId} {...register('district')}>
-              <option value="">{regionId ? 'Tanlang' : 'Avval hududni tanlang'}</option>
+              <option value="">{regionId ? t('resume.select') : t('resume.select_region_first')}</option>
               {districts?.map((d) => (
                 <option key={d.id} value={d.id}>{d.name}</option>
               ))}
@@ -162,38 +164,38 @@ function ResumeForm({ initialData, onSubmit, isPending, error, onCancel }) {
         </div>
       </Section>
 
-      <Section title="Kasb va karyera">
+      <Section title={t('resume.section_career')}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField label="Kasb / Lavozim" error={errors.profession?.message}>
+          <FormField label={t('resume.f_profession')} error={errors.profession?.message}>
             <Select error={!!errors.profession} {...register('profession')}>
-              <option value="">Tanlang</option>
+              <option value="">{t('resume.select')}</option>
               {professions?.map((p) => (
                 <option key={p.id} value={p.id}>{p.name}</option>
               ))}
             </Select>
           </FormField>
-          <FormField label="Karyera darajasi *" error={errors.career_level?.message}>
+          <FormField label={`${t('resume.f_career_level')} *`} error={errors.career_level?.message}>
             <Select error={!!errors.career_level} {...register('career_level')}>
-              <option value="">Tanlang</option>
+              <option value="">{t('resume.select')}</option>
               {CAREER_LEVEL_OPTIONS.map((o) => (
                 <option key={o.value} value={o.value}>{o.label}</option>
               ))}
             </Select>
           </FormField>
-          <FormField label="Kutilayotgan maosh (so'm)" error={errors.expected_salary?.message}>
+          <FormField label={t('resume.f_expected_salary')} error={errors.expected_salary?.message}>
             <Input
               type="number"
-              placeholder="masalan: 5000000"
+              placeholder={t('resume.salary_ph')}
               error={!!errors.expected_salary}
               {...register('expected_salary')}
             />
           </FormField>
         </div>
         <div className="mt-4">
-          <FormField label="Kasb haqida qo'shimcha" error={errors.profession_detail?.message}>
+          <FormField label={t('resume.f_profession_detail')} error={errors.profession_detail?.message}>
             <Textarea
               rows={3}
-              placeholder="Qisqacha o'zingiz haqingizda..."
+              placeholder={t('resume.f_profession_detail_ph')}
               error={!!errors.profession_detail}
               {...register('profession_detail')}
             />
@@ -201,7 +203,7 @@ function ResumeForm({ initialData, onSubmit, isPending, error, onCancel }) {
         </div>
       </Section>
 
-      <Section title="Ko'nikmalar">
+      <Section title={t('resume.section_skills')}>
         <Controller
           name="skills"
           control={control}
@@ -211,27 +213,27 @@ function ResumeForm({ initialData, onSubmit, isPending, error, onCancel }) {
         />
       </Section>
 
-      <Section title="Ish istaklari">
+      <Section title={t('resume.section_work_pref')}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField label="Bandlik turi *" error={errors.employment_type?.message}>
+          <FormField label={`${t('resume.f_employment_type')} *`} error={errors.employment_type?.message}>
             <Select error={!!errors.employment_type} {...register('employment_type')}>
-              <option value="">Tanlang</option>
+              <option value="">{t('resume.select')}</option>
               {EMPLOYMENT_TYPE_OPTIONS.map((o) => (
                 <option key={o.value} value={o.value}>{o.label}</option>
               ))}
             </Select>
           </FormField>
-          <FormField label="Ish rejimi *" error={errors.work_mode?.message}>
+          <FormField label={`${t('resume.f_work_mode')} *`} error={errors.work_mode?.message}>
             <Select error={!!errors.work_mode} {...register('work_mode')}>
-              <option value="">Tanlang</option>
+              <option value="">{t('resume.select')}</option>
               {WORK_MODE_OPTIONS.map((o) => (
                 <option key={o.value} value={o.value}>{o.label}</option>
               ))}
             </Select>
           </FormField>
-          <FormField label="Ish qidirish holati *" error={errors.employment_status?.message}>
+          <FormField label={`${t('resume.f_employment_status')} *`} error={errors.employment_status?.message}>
             <Select error={!!errors.employment_status} {...register('employment_status')}>
-              <option value="">Tanlang</option>
+              <option value="">{t('resume.select')}</option>
               {EMPLOYMENT_STATUS_OPTIONS.map((o) => (
                 <option key={o.value} value={o.value}>{o.label}</option>
               ))}
@@ -240,31 +242,31 @@ function ResumeForm({ initialData, onSubmit, isPending, error, onCancel }) {
         </div>
       </Section>
 
-      <Section title="Qo'shimcha ma'lumotlar">
+      <Section title={t('resume.section_extra')}>
         <div className="space-y-4">
           <Checkbox
-            label="Nogironligim bor"
-            description="Nogironlar uchun mo'ljallangan vakansiyalarda ko'rinasiz"
+            label={t('resume.chk_disabled')}
+            description={t('resume.chk_disabled_desc')}
             {...register('is_disabled')}
           />
           <Checkbox
-            label="Ijtimoiy reestrda turaman"
-            description="Davlat ijtimoiy yordam reestrida ro'yxatdaman"
+            label={t('resume.chk_social')}
+            description={t('resume.chk_social_desc')}
             {...register('is_social_registry')}
           />
           <Checkbox
-            label="Haydovchilik guvohnomam bor"
+            label={t('resume.chk_license')}
             {...register('has_driving_license')}
           />
           {hasDrivingLicense && (
             <div className="ml-8">
               <FormField
-                label="Toifalar"
-                hint="Masalan: B, C, D yoki BE, CE..."
+                label={t('resume.f_license_cat')}
+                hint={t('resume.f_license_cat_hint')}
                 error={errors.driving_license_categories?.message}
               >
                 <Input
-                  placeholder="B, C, D"
+                  placeholder={t('resume.f_license_cat_ph')}
                   error={!!errors.driving_license_categories}
                   {...register('driving_license_categories')}
                 />
@@ -274,10 +276,10 @@ function ResumeForm({ initialData, onSubmit, isPending, error, onCancel }) {
         </div>
       </Section>
 
-      <Section title="E'lon qilish">
+      <Section title={t('resume.section_publish')}>
         <Checkbox
-          label="Rezyumemni e'lon qilingan deb belgilash"
-          description="Yoqilganda ish beruvchilar rezyumengizni ko'ra oladi va sizni taklif qilishi mumkin"
+          label={t('resume.chk_publish')}
+          description={t('resume.chk_publish_desc')}
           {...register('is_published')}
         />
       </Section>
@@ -285,11 +287,11 @@ function ResumeForm({ initialData, onSubmit, isPending, error, onCancel }) {
       <div className="flex gap-3 justify-end">
         {onCancel && (
           <Button type="button" variant="secondary" onClick={onCancel}>
-            Bekor qilish
+            {t('common.cancel')}
           </Button>
         )}
         <Button type="submit" loading={isPending}>
-          {isEdit ? 'Saqlash' : 'Rezyume yaratish'}
+          {isEdit ? t('resume.btn_save') : t('resume.btn_create')}
         </Button>
       </div>
     </form>
@@ -398,6 +400,7 @@ function ResumeView({ resume, onEdit }) {
 }
 
 function MyResumePage() {
+  const { t } = useTranslation()
   const { data: resume, isLoading } = useMyResume()
   const createMutation = useCreateResume()
   const updateMutation = useUpdateResume()
@@ -412,7 +415,7 @@ function MyResumePage() {
     setImportError(null)
     importMutation.mutate(file, {
       onSuccess: () => setEditing(true), // forma parse natijasi bilan ochiladi
-      onError: (err) => setImportError(getApiError(err) || 'Faylni o\'qib bo\'lmadi'),
+      onError: (err) => setImportError(getApiError(err) || t('resume.import_error')),
     })
   }
 
@@ -433,7 +436,7 @@ function MyResumePage() {
   if (isLoading) {
     return (
       <div className="max-w-[900px] mx-auto px-4 sm:px-6 py-10 sm:py-16 flex items-center justify-center text-gray-500">
-        <Loader2 className="w-6 h-6 animate-spin mr-2" /> Yuklanmoqda...
+        <Loader2 className="w-6 h-6 animate-spin mr-2" /> {t('common.loading')}
       </div>
     )
   }
@@ -441,17 +444,17 @@ function MyResumePage() {
   return (
     <div className="max-w-[900px] mx-auto px-4 sm:px-6 py-6 sm:py-8">
       <div className="flex items-center justify-between mb-6 gap-4 flex-wrap">
-        <h1 className="text-3xl font-bold text-gray-900">Mening rezyumem</h1>
+        <h1 className="text-3xl font-bold text-gray-900">{t('resume.my_title')}</h1>
         {resume && !editing && (
           resume.is_published ? (
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-green-50 text-green-700">
               <CheckCircle2 className="w-3.5 h-3.5" />
-              E'lon qilingan
+              {t('resume.status_published')}
             </span>
           ) : (
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
               <EyeOff className="w-3.5 h-3.5" />
-              Yashirilgan
+              {t('resume.status_hidden')}
             </span>
           )
         )}
@@ -467,11 +470,10 @@ function MyResumePage() {
               </div>
               <div>
                 <h2 className="text-lg font-semibold text-gray-900">
-                  Word'dan AI yordamida yarating
+                  {t('resume.import_title')}
                 </h2>
                 <p className="text-sm text-gray-600 mt-0.5">
-                  Tayyor Word rezyumeingizni yuklang — sun'iy intellekt ma'lumotlarni
-                  o'qib, formani avtomatik to'ldiradi. Keyin tekshirib, saqlaysiz.
+                  {t('resume.import_desc')}
                 </p>
               </div>
             </div>
@@ -490,7 +492,7 @@ function MyResumePage() {
                 className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-brand-200 text-brand-700 rounded-xl text-sm font-medium hover:bg-brand-50 transition"
               >
                 <Download className="w-4 h-4" />
-                Shablonni yuklab olish
+                {t('resume.import_download')}
               </a>
 
               <label className={`inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition cursor-pointer ${
@@ -501,12 +503,12 @@ function MyResumePage() {
                 {importMutation.isPending ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    AI rezyumengizni o'qiyapti...
+                    {t('resume.import_reading')}
                   </>
                 ) : (
                   <>
                     <Upload className="w-4 h-4" />
-                    To'ldirilgan Word'ni yuklash
+                    {t('resume.import_upload')}
                   </>
                 )}
                 <input
@@ -519,7 +521,7 @@ function MyResumePage() {
               </label>
             </div>
             <p className="text-xs text-gray-400 mt-3">
-              Faqat .docx format, 5MB gacha. Shablonni yuklab olib, to'ldiring va qaytadan yuklang.
+              {t('resume.import_hint')}
             </p>
           </div>
 
@@ -527,13 +529,13 @@ function MyResumePage() {
           <div className="bg-white rounded-2xl border border-gray-200 p-8 text-center">
             <FileText className="w-12 h-12 text-gray-300 mx-auto mb-3" />
             <h2 className="text-lg font-semibold text-gray-900 mb-1">
-              Yoki qo'lda to'ldiring
+              {t('resume.or_manual')}
             </h2>
             <p className="text-gray-500 mb-5 max-w-md mx-auto text-sm">
-              Rezyumeni bosqichma-bosqich o'zingiz kiriting.
+              {t('resume.or_manual_desc')}
             </p>
             <Button onClick={() => setEditing(true)} size="lg">
-              Qo'lda rezyume yaratish
+              {t('resume.create_manual')}
             </Button>
           </div>
         </div>

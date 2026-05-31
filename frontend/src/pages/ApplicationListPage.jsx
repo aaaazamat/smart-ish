@@ -1,4 +1,5 @@
 import { Link, useSearchParams } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import {
   Loader2, AlertCircle, Inbox, MapPin, Building2,
   Trash2, Calendar, ChevronDown,
@@ -34,6 +35,7 @@ function StatCard({ label, value, color = 'gray', active, onClick }) {
 }
 
 function ApplicationCard({ app, onWithdraw, isWithdrawing }) {
+  const { t } = useTranslation()
   const statusColor = APPLICATION_STATUS_COLORS[app.status] || 'bg-gray-100 text-gray-700'
 
   return (
@@ -70,7 +72,7 @@ function ApplicationCard({ app, onWithdraw, isWithdrawing }) {
       <div className="flex items-center justify-between pt-3 border-t border-gray-100 text-xs text-gray-500">
         <span className="flex items-center gap-1">
           <Calendar className="w-3.5 h-3.5" />
-          Yuborilgan: {formatDate(app.applied_at)}
+          {t('application.sent_at')}: {formatDate(app.applied_at)}
         </span>
         {app.status === 'pending' && (
           <button
@@ -80,7 +82,7 @@ function ApplicationCard({ app, onWithdraw, isWithdrawing }) {
             className="inline-flex items-center gap-1 text-red-500 hover:text-red-600 disabled:opacity-40"
           >
             <Trash2 className="w-3.5 h-3.5" />
-            Qaytarib olish
+            {t('application.withdraw_short')}
           </button>
         )}
       </div>
@@ -89,6 +91,7 @@ function ApplicationCard({ app, onWithdraw, isWithdrawing }) {
 }
 
 function ApplicationListPage() {
+  const { t } = useTranslation()
   const [searchParams, setSearchParams] = useSearchParams()
   const status = searchParams.get('status') || ''
 
@@ -106,7 +109,7 @@ function ApplicationListPage() {
   }
 
   const handleWithdraw = (id) => {
-    if (!window.confirm('Arizani qaytarib olishni tasdiqlaysizmi?')) return
+    if (!window.confirm(t('application.confirm_withdraw'))) return
     withdraw.mutate(id)
   }
 
@@ -115,17 +118,17 @@ function ApplicationListPage() {
 
   return (
     <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-6 sm:py-8">
-      <h1 className="text-3xl font-bold text-gray-900 mb-6">Mening arizalarim</h1>
+      <h1 className="text-3xl font-bold text-gray-900 mb-6">{t('application.my_title')}</h1>
 
       {stats && stats.total > 0 && (
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2 mb-6">
-          <StatCard label="Jami" value={stats.total} active={!status} onClick={() => setStatus('')} />
-          <StatCard label="Kutilmoqda" value={stats.pending} color="amber" active={status === 'pending'} onClick={() => setStatus('pending')} />
-          <StatCard label="Ko'rildi" value={stats.viewed} color="blue" active={status === 'viewed'} onClick={() => setStatus('viewed')} />
-          <StatCard label="Suhbat" value={stats.interview} color="purple" active={status === 'interview'} onClick={() => setStatus('interview')} />
-          <StatCard label="Qabul" value={stats.accepted} color="green" active={status === 'accepted'} onClick={() => setStatus('accepted')} />
-          <StatCard label="Ishga olindi" value={stats.hired} color="green" active={status === 'hired'} onClick={() => setStatus('hired')} />
-          <StatCard label="Rad" value={stats.rejected} color="red" active={status === 'rejected'} onClick={() => setStatus('rejected')} />
+          <StatCard label={t('application.stat_total')} value={stats.total} active={!status} onClick={() => setStatus('')} />
+          <StatCard label={t('application.stat_pending')} value={stats.pending} color="amber" active={status === 'pending'} onClick={() => setStatus('pending')} />
+          <StatCard label={t('application.stat_viewed')} value={stats.viewed} color="blue" active={status === 'viewed'} onClick={() => setStatus('viewed')} />
+          <StatCard label={t('application.stat_interview')} value={stats.interview} color="purple" active={status === 'interview'} onClick={() => setStatus('interview')} />
+          <StatCard label={t('application.stat_accepted')} value={stats.accepted} color="green" active={status === 'accepted'} onClick={() => setStatus('accepted')} />
+          <StatCard label={t('application.stat_hired')} value={stats.hired} color="green" active={status === 'hired'} onClick={() => setStatus('hired')} />
+          <StatCard label={t('application.stat_rejected')} value={stats.rejected} color="red" active={status === 'rejected'} onClick={() => setStatus('rejected')} />
         </div>
       )}
 
@@ -149,14 +152,14 @@ function ApplicationListPage() {
       {isLoading && (
         <div className="flex items-center justify-center py-16 text-gray-500">
           <Loader2 className="w-6 h-6 animate-spin mr-2" />
-          Yuklanmoqda...
+          {t('common.loading')}
         </div>
       )}
 
       {isError && (
         <div className="bg-red-50 border border-red-200 text-red-700 p-5 rounded-xl flex items-start gap-3">
           <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
-          <span>{error?.message || 'Xato yuz berdi'}</span>
+          <span>{error?.message || t('common.error')}</span>
         </div>
       )}
 
@@ -164,19 +167,17 @@ function ApplicationListPage() {
         <div className="bg-white rounded-2xl border border-gray-200 p-12 text-center">
           <Inbox className="w-14 h-14 text-gray-300 mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-gray-900 mb-2">
-            {status ? 'Bu holatda ariza topilmadi' : 'Hali ariza yubormaganmsiz'}
+            {status ? t('application.not_found_status') : t('application.empty')}
           </h2>
           <p className="text-gray-500 mb-6">
-            {status
-              ? 'Boshqa filterni tanlang yoki "Jami" ni bosing'
-              : 'Vakansiyalardan biriga ariza yuborib boshlang'}
+            {status ? t('application.try_other_filter') : t('application.empty_hint')}
           </p>
           {!status && (
             <Link
-              to="/"
+              to="/vacancies"
               className="inline-block px-6 py-3 bg-brand-500 text-white rounded-lg font-medium hover:bg-brand-600 transition"
             >
-              Vakansiyalarni ko'rish
+              {t('application.browse_vacancies')}
             </Link>
           )}
         </div>
@@ -185,7 +186,7 @@ function ApplicationListPage() {
       {apps.length > 0 && (
         <>
           <p className="text-sm text-gray-500 mb-4">
-            {total} ta ariza topildi
+            {t('application.found_count', { count: total })}
           </p>
           <div className="space-y-3">
             {apps.map((app) => (

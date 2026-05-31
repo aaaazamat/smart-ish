@@ -1,10 +1,12 @@
 import { useState, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Search, X } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { referenceApi } from '@/api/endpoints'
 import { cn } from '@/lib/cn'
 
 function SkillsPicker({ value = [], onChange }) {
+  const { t } = useTranslation()
   const [search, setSearch] = useState('')
   const { data: skills = [], isLoading } = useQuery({
     queryKey: ['skills'],
@@ -57,7 +59,7 @@ function SkillsPicker({ value = [], onChange }) {
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
         <input
           type="text"
-          placeholder="Ko'nikma qidirish..."
+          placeholder={t('resume.skills_search_ph')}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="w-full bg-white border border-gray-200 rounded-lg pl-10 pr-3 py-2.5 text-sm placeholder:text-gray-400 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition"
@@ -65,10 +67,10 @@ function SkillsPicker({ value = [], onChange }) {
       </div>
 
       <div className="border border-gray-100 rounded-lg p-3 max-h-48 overflow-y-auto">
-        {isLoading && <div className="text-sm text-gray-500">Yuklanmoqda...</div>}
+        {isLoading && <div className="text-sm text-gray-500">{t('common.loading')}</div>}
         {!isLoading && filtered.length === 0 && (
           <div className="text-sm text-gray-500 italic">
-            {search ? 'Hech narsa topilmadi' : 'Barcha ko\'nikmalar tanlangan'}
+            {search ? t('resume.skills_none_found') : t('resume.skills_all_selected')}
           </div>
         )}
         <div className="flex flex-wrap gap-2">
@@ -89,7 +91,7 @@ function SkillsPicker({ value = [], onChange }) {
       </div>
 
       <p className="text-xs text-gray-500">
-        Tanlangan: {selected.length} ta ko'nikma
+        {t('resume.skills_selected', { count: selected.length })}
       </p>
     </div>
   )
