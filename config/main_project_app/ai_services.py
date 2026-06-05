@@ -298,6 +298,7 @@ def calculate_match(resume, vacancy, use_cache: bool = True, lang: str = "uz") -
 - Tavsif: {(vacancy.description or "yo'q")[:600]}
 """.strip()
 
+    summary_lang = _lang_label(lang)
     prompt = f"""Sen tajribali HR mutaxassisisan. Quyidagi rezyume va vakansiya bir-biriga qanchalik mos kelishini baholashing kerak.
 
 REZYUME:
@@ -323,9 +324,7 @@ Baholash mezonlari:
 - Bandlik turi mosligi
 
 MUHIM: "summary" maydonini FAQAT {summary_lang}da yoz.
-"matched" va "missing" massivlardagi qisqa iboralar ham {summary_lang}da bo'lsin.""".replace(
-        "{summary_lang}", _lang_label(lang)
-    )
+"matched" va "missing" massivlardagi qisqa iboralar ham {summary_lang}da bo'lsin."""
 
     raw = _call_gemini(
         prompt=prompt,
