@@ -7,6 +7,7 @@ Bepul kalit: https://aistudio.google.com/apikey
 import hashlib
 import json
 import logging
+import time
 import urllib.request
 import urllib.error
 
@@ -114,18 +115,38 @@ def _call_gemini(
         method="POST",
     )
 
-    try:
-        with urllib.request.urlopen(req, timeout=30) as response:
-            body = response.read()
-    except urllib.error.HTTPError as e:
-        body = e.read().decode("utf-8", errors="replace")
-        logger.error("Gemini HTTP %s: %s", e.code, body)
-        if e.code == 429:
-            raise AIServiceError("AI servisi band, biroz kutib yana urinib ko'ring")
-        raise AIServiceError(f"AI xatosi (HTTP {e.code})")
-    except urllib.error.URLError as e:
-        logger.error("Gemini network error: %s", e)
-        raise AIServiceError("AI servisiga ulanib bo'lmadi")
+    # Gemini ba'zan vaqtincha 503 (model band) yoki 429/500 qaytaradi — bu
+    # o'tkinchi xato (ayniqsa katta so'rovlarda). Shuning uchun qisqa kutib
+    # (1s, 2s) bir necha marta qayta urinamiz.
+    RETRY_CODES = {429, 500, 503}
+    MAX_ATTEMPTS = 3
+    body = None
+    for attempt in range(1, MAX_ATTEMPTS + 1):
+        try:
+            with urllib.request.urlopen(req, timeout=30) as response:
+                body = response.read()
+            break
+        except urllib.error.HTTPError as e:
+            err_body = e.read().decode("utf-8", errors="replace")
+            logger.error(
+                "Gemini HTTP %s (urinish %s/%s): %s",
+                e.code, attempt, MAX_ATTEMPTS, err_body,
+            )
+            if e.code in RETRY_CODES and attempt < MAX_ATTEMPTS:
+                time.sleep(2 ** (attempt - 1))
+                continue
+            if e.code == 429:
+                raise AIServiceError("AI servisi band, biroz kutib yana urinib ko'ring")
+            raise AIServiceError(f"AI xatosi (HTTP {e.code})")
+        except urllib.error.URLError as e:
+            logger.error(
+                "Gemini network error (urinish %s/%s): %s",
+                attempt, MAX_ATTEMPTS, e,
+            )
+            if attempt < MAX_ATTEMPTS:
+                time.sleep(2 ** (attempt - 1))
+                continue
+            raise AIServiceError("AI servisiga ulanib bo'lmadi")
 
     try:
         result = json.loads(body)
