@@ -20,7 +20,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from django.conf import settings
 from django.core.cache import cache
 
-from .ai_services import _call_gemini, AIServiceError
+from .ai_services import _call_gemini, AIServiceError, _main_keys
 
 logger = logging.getLogger(__name__)
 
@@ -36,9 +36,8 @@ def _translate_keys() -> list:
         keys = [keys]
     keys = [k.strip() for k in keys if k and k.strip()]
     if not keys:
-        main = getattr(settings, "GEMINI_API_KEY", "")
-        if main:
-            keys = [main]
+        # Fallback: asosiy GEMINI_API_KEY (u ham vergulli ko'p kalit bo'lishi mumkin)
+        keys = _main_keys()
     return keys
 
 # Til kodlarining inson o'qiy oladigan nomlari (Gemini prompt'iga uzatiladi)

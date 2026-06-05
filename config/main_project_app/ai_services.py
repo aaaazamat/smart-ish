@@ -64,6 +64,25 @@ class AIServiceError(Exception):
     """AI servisidan xato"""
 
 
+def _main_keys() -> list:
+    """Asosiy Gemini kalitlari ro'yxati (failover uchun).
+
+    GEMINI_API_KEY bitta kalit yoki vergul bilan ajratilgan bir nechta kalit
+    ("key1,key2,key3") bo'lishi mumkin. Bittasi limitga yetsa (429) yoki
+    yaroqsiz bo'lsa (401/403), avtomatik keyingisiga o'tiladi.
+    """
+    raw = getattr(settings, "GEMINI_API_KEY", "") or ""
+    parts = list(raw) if isinstance(raw, (list, tuple)) else str(raw).split(",")
+    return [k.strip() for k in parts if k and str(k).strip()]
+
+
+# Kalitni o'zgartirib ko'rishga arzigulik xatolar (shu kalit yaroqsiz/limitda)
+_KEY_FAILOVER_CODES = {401, 403, 429}
+# O'tkinchi xatolar — shu kalitda qisqa kutib qayta urinamiz (model band)
+_RETRY_CODES = {500, 503}
+_MAX_ATTEMPTS = 3  # bitta kalit uchun o'tkinchi xatoda urinishlar soni
+
+
 def _call_gemini(
     prompt: str = None,
     *,
@@ -75,11 +94,10 @@ def _call_gemini(
     api_key: str = None,
     model: str = None,
 ) -> str:
-    # api_key berilmasa, asosiy GEMINI_API_KEY ishlatiladi.
-    # Tarjima servisi alohida kalit uzatishi mumkin (rate-limit'ni bo'lish uchun).
-    if not api_key:
-        api_key = getattr(settings, "GEMINI_API_KEY", "")
-    if not api_key:
+    # api_key aniq berilsa — faqat o'sha (tarjima servisi o'z rotatsiyasini
+    # boshqaradi). Aks holda — asosiy kalitlar ro'yxati (failover bilan).
+    keys = [api_key] if api_key else _main_keys()
+    if not keys:
         raise AIServiceError(
             "GEMINI_API_KEY .env faylida sozlanmagan. "
             "Iltimos, https://aistudio.google.com/apikey dan kalit oling."
@@ -108,45 +126,67 @@ def _call_gemini(
 
     data = json.dumps(payload).encode("utf-8")
 
-    req = urllib.request.Request(
-        f"{gemini_url}?key={api_key}",
-        data=data,
-        headers={"Content-Type": "application/json"},
-        method="POST",
-    )
-
-    # Gemini ba'zan vaqtincha 503 (model band) yoki 429/500 qaytaradi — bu
-    # o'tkinchi xato (ayniqsa katta so'rovlarda). Shuning uchun qisqa kutib
-    # (1s, 2s) bir necha marta qayta urinamiz.
-    RETRY_CODES = {429, 500, 503}
-    MAX_ATTEMPTS = 3
     body = None
-    for attempt in range(1, MAX_ATTEMPTS + 1):
-        try:
-            with urllib.request.urlopen(req, timeout=30) as response:
-                body = response.read()
-            break
-        except urllib.error.HTTPError as e:
-            err_body = e.read().decode("utf-8", errors="replace")
-            logger.error(
-                "Gemini HTTP %s (urinish %s/%s): %s",
-                e.code, attempt, MAX_ATTEMPTS, err_body,
-            )
-            if e.code in RETRY_CODES and attempt < MAX_ATTEMPTS:
-                time.sleep(2 ** (attempt - 1))
-                continue
-            if e.code == 429:
-                raise AIServiceError("AI servisi band, biroz kutib yana urinib ko'ring")
-            raise AIServiceError(f"AI xatosi (HTTP {e.code})")
-        except urllib.error.URLError as e:
-            logger.error(
-                "Gemini network error (urinish %s/%s): %s",
-                attempt, MAX_ATTEMPTS, e,
-            )
-            if attempt < MAX_ATTEMPTS:
-                time.sleep(2 ** (attempt - 1))
-                continue
-            raise AIServiceError("AI servisiga ulanib bo'lmadi")
+    last_error = AIServiceError("AI servisiga ulanib bo'lmadi")
+
+    # Tashqi sikl — kalitlar bo'yicha (failover). Ichki sikl — bitta kalitda
+    # o'tkinchi 503/500 xatoda qisqa kutib (1s, 2s) qayta urinish.
+    for ki, key in enumerate(keys, 1):
+        req = urllib.request.Request(
+            f"{gemini_url}?key={key}",
+            data=data,
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        next_key = False
+        for attempt in range(1, _MAX_ATTEMPTS + 1):
+            try:
+                with urllib.request.urlopen(req, timeout=30) as response:
+                    body = response.read()
+                break
+            except urllib.error.HTTPError as e:
+                err_body = e.read().decode("utf-8", errors="replace")
+                logger.error(
+                    "Gemini HTTP %s (kalit %s/%s, urinish %s/%s): %s",
+                    e.code, ki, len(keys), attempt, _MAX_ATTEMPTS, err_body,
+                )
+                if e.code in _RETRY_CODES and attempt < _MAX_ATTEMPTS:
+                    time.sleep(2 ** (attempt - 1))
+                    continue
+                # Kalitga oid muammo: 401/403/429, yoki yaroqsiz kalit (400 +
+                # API_KEY_INVALID). Bunda keyingi kalitga o'tamiz. Boshqa 400
+                # (noto'g'ri so'rov) — hamma kalitda bir xil yiqiladi, o'tmaymiz.
+                key_problem = e.code in _KEY_FAILOVER_CODES or (
+                    e.code == 400 and "API_KEY_INVALID" in err_body
+                )
+                if key_problem:
+                    last_error = (
+                        AIServiceError("AI servisi band, biroz kutib yana urinib ko'ring")
+                        if e.code == 429
+                        else AIServiceError(f"AI xatosi (HTTP {e.code})")
+                    )
+                    next_key = True
+                    break
+                raise AIServiceError(f"AI xatosi (HTTP {e.code})")
+            except urllib.error.URLError as e:
+                logger.error(
+                    "Gemini network error (kalit %s/%s, urinish %s/%s): %s",
+                    ki, len(keys), attempt, _MAX_ATTEMPTS, e,
+                )
+                if attempt < _MAX_ATTEMPTS:
+                    time.sleep(2 ** (attempt - 1))
+                    continue
+                last_error = AIServiceError("AI servisiga ulanib bo'lmadi")
+                next_key = True
+                break
+        if body is not None:
+            break  # muvaffaqiyat — kalitlar siklidan chiqamiz
+        if not next_key:
+            break  # qayta urinishga arzimaydigan xato (raise bo'lib ketgan)
+
+    if body is None:
+        # Barcha kalitlar muvaffaqiyatsiz tugadi
+        raise last_error
 
     try:
         result = json.loads(body)
