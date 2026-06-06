@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import {
@@ -8,7 +9,10 @@ import { adminApi } from '@/api/endpoints'
 import { useAuthStore } from '@/store/authStore'
 import { formatNumber } from '@/lib/format'
 import { StatCardSkeleton } from '@/components/ui/Skeletons'
-import DashboardCharts from '@/components/admin/DashboardCharts'
+
+// Diagrammalar (recharts) — og'ir kutubxona, faqat shu sahifa ochilganda
+// dinamik yuklanadi. Bu butun ilovani sekinlashtirmaydi.
+const DashboardCharts = lazy(() => import('@/components/admin/DashboardCharts'))
 
 function StatCard({ icon: Icon, label, value, color = 'brand', sub, to }) {
   const colors = {
@@ -103,7 +107,13 @@ function AdminDashboardPage() {
         </div>
       </div>
 
-      <DashboardCharts overview={data} />
+      <Suspense fallback={
+        <div className="h-64 flex items-center justify-center text-gray-400 text-sm mb-8">
+          Diagrammalar yuklanmoqda...
+        </div>
+      }>
+        <DashboardCharts overview={data} />
+      </Suspense>
 
       <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
         Foydalanuvchilar

@@ -73,12 +73,15 @@ export default defineConfig({
             if (id.includes('i18next') || id.includes('react-i18next')) {
               return 'vendor-i18n'
             }
-            // Diagrammalar (recharts + d3) — faqat admin dashboard'da kerak,
-            // shuning uchun alohida chunk (oddiy foydalanuvchi yuklamaydi).
+            // recharts/d3 — qo'lda chunk'ga MAJBURLAMAYMIZ (undefined qaytaramiz).
+            // Ularni rolldown DashboardCharts'ning lazy (dinamik import) chunk'iga
+            // qo'shadi — shunda faqat admin dashboard ochilganda yuklanadi va
+            // qo'lda guruhlash sabab bo'lgan init-tartib xatosi ham yo'qoladi.
             if (id.includes('recharts') || id.includes('victory-vendor') ||
                 id.includes('d3-') || id.includes('react-smooth') ||
-                id.includes('internmap')) {
-              return 'vendor-charts'
+                id.includes('internmap') || id.includes('decimal.js-light') ||
+                id.includes('fast-equals') || id.includes('eventemitter3')) {
+              return undefined
             }
             // Qolgan barcha node_modules — yagona vendor
             return 'vendor-other'
