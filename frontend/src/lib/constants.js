@@ -58,6 +58,28 @@ export const EMPLOYER_STATUS_TRANSITIONS = [
   { value: 'rejected', label: 'Rad etish' },
 ]
 
+// Ariza amali tugmalari uchun nomlar
+export const APPLICATION_ACTION_LABELS = {
+  viewed: "Ko'rildi deb belgilash",
+  accepted: 'Qabul qilish',
+  interview: 'Suhbatga chaqirish',
+  hired: 'Ishga qabul qilish',
+  rejected: 'Rad etish',
+}
+
+// Bosqichli o'tish (state machine) — har holatdan keyin mumkin amallar.
+// Backend (ApplicationStatusUpdateSerializer.ALLOWED_TRANSITIONS) bilan mos.
+// Rezyume ochilganda holat avtomatik "viewed" bo'ladi, shundan keyin
+// "Qabul qilish" / "Rad etish" chiqadi.
+export const EMPLOYER_NEXT_ACTIONS = {
+  pending: ['rejected'],
+  viewed: ['accepted', 'rejected'],
+  accepted: ['interview', 'rejected'],
+  interview: ['hired', 'rejected'],
+  hired: [],
+  rejected: [],
+}
+
 export const APPLICATION_STATUS_COLORS = {
   pending: 'bg-amber-50 text-amber-700 border-amber-200',
   viewed: 'bg-blue-50 text-blue-700 border-blue-200',

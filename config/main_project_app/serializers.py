@@ -1366,7 +1366,23 @@ class EmployerApplicationDetailSerializer(serializers.ModelSerializer):
 
 
 class ApplicationStatusUpdateSerializer(serializers.ModelSerializer):
-    """Status yangilash uchun (employer)"""
+    """Status yangilash uchun (employer).
+
+    APPLIED yo'nalishi (izlovchi → vakansiya) uchun bosqichli o'tish (state
+    machine) majburiy: bosqichni o'tkazib yuborib bo'lmaydi. Masalan, avval
+    rezyume ko'rilmasdan (viewed) qabul qilib bo'lmaydi; qabul qilmasdan
+    suhbatga chaqirib bo'lmaydi; suhbatsiz ishga olib bo'lmaydi.
+    """
+
+    # Har bir bosqichdan keyin mumkin bo'lgan holatlar (APPLIED yo'nalishi)
+    ALLOWED_TRANSITIONS = {
+        Application.Status.PENDING:   {Application.Status.VIEWED, Application.Status.REJECTED},
+        Application.Status.VIEWED:    {Application.Status.ACCEPTED, Application.Status.REJECTED},
+        Application.Status.ACCEPTED:  {Application.Status.INTERVIEW, Application.Status.REJECTED},
+        Application.Status.INTERVIEW: {Application.Status.HIRED, Application.Status.REJECTED},
+        Application.Status.HIRED:     set(),   # yakuniy
+        Application.Status.REJECTED:  set(),   # yakuniy
+    }
 
     class Meta:
         model = Application
@@ -1387,6 +1403,33 @@ class ApplicationStatusUpdateSerializer(serializers.ModelSerializer):
                 _("Bu status uchun ruxsat yo'q. Ruxsat etilganlari: %(allowed)s") % {"allowed": ", ".join(allowed)}
             )
         return value
+
+    def validate(self, attrs):
+        new_status = attrs.get("status")
+        instance = self.instance
+        # Faqat status o'zgarishi bo'lsa va APPLIED yo'nalishi bo'lsa tekshiramiz.
+        # INVITED yo'nalishi (beruvchi → rezyume) alohida oqim — unga tegmaymiz.
+        if new_status is None or instance is None:
+            return attrs
+        if instance.direction != Application.Direction.APPLIED:
+            return attrs
+        current = instance.status
+        if new_status == current:
+            return attrs
+        allowed = self.ALLOWED_TRANSITIONS.get(current, set())
+        if new_status not in allowed:
+            labels = dict(Application.Status.choices)
+            raise serializers.ValidationError({
+                "status": _(
+                    "Hozirgi bosqich (\"%(cur)s\")dan to'g'ridan-to'g'ri "
+                    "\"%(new)s\" holatiga o'tib bo'lmaydi. Bosqichlarni tartib "
+                    "bilan bajaring."
+                ) % {
+                    "cur": labels.get(current, current),
+                    "new": labels.get(new_status, new_status),
+                }
+            })
+        return attrs
 
     def update(self, instance, validated_data):
         old_status = instance.status

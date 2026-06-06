@@ -313,6 +313,7 @@ function Pill({ children, color = 'gray' }) {
 }
 
 function ResumeView({ resume, onEdit }) {
+  const { t } = useTranslation()
   const Item = ({ label, value }) => (
     <div className="py-2.5 border-b border-gray-100 last:border-0">
       <div className="text-xs text-gray-500 mb-0.5">{label}</div>
@@ -331,12 +332,12 @@ function ResumeView({ resume, onEdit }) {
           <div>
             <h2 className="text-2xl font-bold text-gray-900">{fullName}</h2>
             <p className="text-base text-brand-500 mt-1">
-              {profession || resume.career_level_display || 'Kasb ko\'rsatilmagan'}
+              {profession || resume.career_level_display || t('resume.v_no_profession')}
             </p>
           </div>
           <Button onClick={onEdit} variant="secondary">
             <Pencil className="w-4 h-4" />
-            Tahrirlash
+            {t('resume.btn_edit')}
           </Button>
         </div>
         {resume.profession_detail && (
@@ -344,18 +345,18 @@ function ResumeView({ resume, onEdit }) {
         )}
       </div>
 
-      <Section title="Shaxsiy ma'lumotlar">
+      <Section title={t('resume.section_personal')}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8">
-          <Item label="Telefon" value={resume.phone_number} />
-          <Item label="Email" value={resume.email} />
-          <Item label="Tug'ilgan sana" value={resume.birth_date} />
-          <Item label="Jins" value={resume.gender_display} />
-          <Item label="Hudud" value={location} />
+          <Item label={t('resume.f_phone')} value={resume.phone_number} />
+          <Item label={t('resume.f_email')} value={resume.email} />
+          <Item label={t('resume.f_birth_date')} value={resume.birth_date} />
+          <Item label={t('resume.f_gender')} value={resume.gender_display} />
+          <Item label={t('resume.v_location')} value={location} />
         </div>
       </Section>
 
       {resume.skills?.length > 0 && (
-        <Section title="Ko'nikmalar">
+        <Section title={t('resume.section_skills')}>
           <div className="flex flex-wrap gap-2">
             {resume.skills.map((s) => (
               <Pill key={s.id} color="brand">{s.name}</Pill>
@@ -364,27 +365,27 @@ function ResumeView({ resume, onEdit }) {
         </Section>
       )}
 
-      <Section title="Ish istaklari">
+      <Section title={t('resume.v_section_prefs')}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8">
-          <Item label="Karyera darajasi" value={resume.career_level_display} />
+          <Item label={t('resume.v_career_level')} value={resume.career_level_display} />
           <Item
-            label="Kutilayotgan maosh"
-            value={resume.expected_salary ? `${Number(resume.expected_salary).toLocaleString('ru-RU').replace(/,/g, ' ')} so'm` : null}
+            label={t('resume.f_expected_salary')}
+            value={resume.expected_salary ? `${Number(resume.expected_salary).toLocaleString('ru-RU').replace(/,/g, ' ')} ${t('resume.currency_sum')}` : null}
           />
-          <Item label="Bandlik turi" value={resume.employment_type_display} />
-          <Item label="Ish rejimi" value={resume.work_mode_display} />
-          <Item label="Holat" value={resume.employment_status_display} />
+          <Item label={t('resume.v_employment_type')} value={resume.employment_type_display} />
+          <Item label={t('resume.v_work_mode')} value={resume.work_mode_display} />
+          <Item label={t('resume.v_status')} value={resume.employment_status_display} />
         </div>
       </Section>
 
       {(resume.is_disabled || resume.is_social_registry || resume.has_driving_license) && (
-        <Section title="Qo'shimcha ma'lumotlar">
+        <Section title={t('resume.v_section_extra')}>
           <div className="flex flex-wrap gap-2">
-            {resume.is_disabled && <Pill color="green">Nogironlik mavjud</Pill>}
-            {resume.is_social_registry && <Pill color="green">Ijtimoiy reestrda</Pill>}
+            {resume.is_disabled && <Pill color="green">{t('resume.v_disabled')}</Pill>}
+            {resume.is_social_registry && <Pill color="green">{t('resume.v_social')}</Pill>}
             {resume.has_driving_license && (
               <Pill color="amber">
-                Haydovchilik guvohnomasi
+                {t('resume.v_license')}
                 {resume.driving_license_categories && ` (${resume.driving_license_categories})`}
               </Pill>
             )}
@@ -407,16 +408,37 @@ function MyResumePage() {
   const importMutation = useImportResumeDocx()
   const [editing, setEditing] = useState(false)
   const [importError, setImportError] = useState(null)
+  const [importSuccess, setImportSuccess] = useState(false)
 
   const handleImport = (e) => {
     const file = e.target.files?.[0]
     e.target.value = '' // bir xil faylni qayta yuklash mumkin bo'lsin
     if (!file) return
     setImportError(null)
+    setImportSuccess(false)
+    // Frontend tekshiruvi — backend'gacha bormasdan tez xato
+    if (!file.name.toLowerCase().endsWith('.docx')) {
+      setImportError(t('resume.import_invalid_type'))
+      return
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setImportError(t('resume.import_too_large'))
+      return
+    }
     importMutation.mutate(file, {
-      onSuccess: () => setEditing(true), // forma parse natijasi bilan ochiladi
+      // Natijani to'liq ko'rish rejimida ko'rsatamiz (nested bo'limlar bilan)
+      onSuccess: () => { setEditing(false); setImportSuccess(true) },
       onError: (err) => setImportError(getApiError(err) || t('resume.import_error')),
     })
+  }
+
+  // Qoralamani boshqa Word bilan qayta import qilish (tasdiqlash bilan)
+  const handleReimport = (e) => {
+    if (!window.confirm(t('resume.import_again_confirm'))) {
+      e.target.value = ''
+      return
+    }
+    handleImport(e)
   }
 
   const handleCreate = (payload, setError) => {
@@ -551,7 +573,52 @@ function MyResumePage() {
       )}
 
       {resume && !editing && (
-        <ResumeView resume={resume} onEdit={() => setEditing(true)} />
+        <div className="space-y-5">
+          {importSuccess && (
+            <div className="bg-green-50 border border-green-200 text-green-800 p-4 rounded-xl flex items-start gap-2 text-sm">
+              <CheckCircle2 className="w-5 h-5 shrink-0 mt-0.5" />
+              <span>{t('resume.import_success')}</span>
+            </div>
+          )}
+
+          {importError && (
+            <div className="bg-red-50 border border-red-200 text-red-700 p-3 rounded-lg flex items-start gap-2 text-sm">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+              <span>{importError}</span>
+            </div>
+          )}
+
+          {!resume.is_published && (
+            <div className="flex justify-end">
+              <label className={`inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition cursor-pointer border ${
+                importMutation.isPending
+                  ? 'bg-brand-50 border-brand-200 text-brand-400 cursor-wait'
+                  : 'bg-white border-brand-200 text-brand-700 hover:bg-brand-50'
+              }`}>
+                {importMutation.isPending ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    {t('resume.import_reading')}
+                  </>
+                ) : (
+                  <>
+                    <Upload className="w-4 h-4" />
+                    {t('resume.import_again')}
+                  </>
+                )}
+                <input
+                  type="file"
+                  accept=".docx"
+                  className="hidden"
+                  disabled={importMutation.isPending}
+                  onChange={handleReimport}
+                />
+              </label>
+            </div>
+          )}
+
+          <ResumeView resume={resume} onEdit={() => { setEditing(true); setImportSuccess(false) }} />
+        </div>
       )}
 
       {resume && editing && (

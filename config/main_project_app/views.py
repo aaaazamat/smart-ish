@@ -483,6 +483,8 @@ class PublicResumeListView(generics.ListAPIView):
         return (
             Resume.objects
             .filter(is_published=True)
+            # Ishga qabul qilingan nomzodlar ro'yxatda ko'rinmaydi
+            .exclude(applications__status=Application.Status.HIRED)
             .select_related("profession", "region", "district")
             .prefetch_related("skills")
         )
@@ -588,9 +590,12 @@ class ImportResumeDocxView(APIView):
     def post(self, request):
         from .resume_parser import parse_resume
 
-        if hasattr(request.user, "resume"):
+        # Mavjud rezyume: e'lon qilingan bo'lsa himoyalanadi; qoralama bo'lsa
+        # qayta import uchun eskisi o'chiriladi (foydalanuvchi boshqa Word yuklaydi).
+        existing = getattr(request.user, "resume", None)
+        if existing is not None and existing.is_published:
             return Response(
-                {"detail": _("Rezyume allaqachon mavjud. Uni tahrirlang yoki o'chiring.")},
+                {"detail": _("Rezyume allaqachon e'lon qilingan. Uni tahrirlang yoki o'chiring.")},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -604,11 +609,20 @@ class ImportResumeDocxView(APIView):
 
         try:
             data = parse_resume(uploaded)
-        except Exception as e:
+        except ValueError as e:
+            # Bizning tekshiruv xabarlari (bo'sh fayl va h.k.) — ko'rsatish xavfsiz
+            return Response({"detail": str(e)}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
+        except Exception:
+            logger.exception("Resume import parse failed (user=%s)", request.user.id)
             return Response(
-                {"detail": _("Word faylini o'qib bo'lmadi: %(err)s") % {"err": str(e)[:100]}},
+                {"detail": _("Word faylini o'qib bo'lmadi. Fayl shablon asosida "
+                             "to'g'ri to'ldirilganiga ishonch hosil qiling.")},
                 status=status.HTTP_422_UNPROCESSABLE_ENTITY,
             )
+
+        # Qayta import: eski qoralamani parse muvaffaqiyatli bo'lgach o'chiramiz
+        if existing is not None:
+            existing.delete()
 
         # Qoralama rezyume yaratish (majburiy maydonlar uchun xavfsiz default'lar)
         resume = Resume.objects.create(
@@ -622,6 +636,7 @@ class ImportResumeDocxView(APIView):
             gender=data.get("gender") or Resume.Gender.MALE,
             profession_id=data.get("profession_id"),
             region_id=data.get("region_id"),
+            district_id=data.get("district_id"),
             profession_detail=(data.get("profession_detail") or "")[:2000],
             career_level=data.get("career_level") or Resume.CareerLevel.JUNIOR,
             expected_salary=data.get("expected_salary") or None,
@@ -1532,6 +1547,8 @@ class EmployerResumeListView(generics.ListAPIView):
         return (
             Resume.objects
             .filter(is_published=True)
+            # Ishga qabul qilingan nomzodlar ro'yxatda ko'rinmaydi
+            .exclude(applications__status=Application.Status.HIRED)
             .select_related("profession", "region", "district")
             .prefetch_related("skills")
             .distinct()

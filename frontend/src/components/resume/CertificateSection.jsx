@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
+import { useTranslation } from 'react-i18next'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Plus, Pencil, Trash2, Award, ExternalLink } from 'lucide-react'
 import { certificateHooks } from '@/hooks/useResume'
@@ -11,6 +12,7 @@ import Button from '@/components/ui/Button'
 import FormField from '@/components/ui/FormField'
 
 function ItemForm({ initialData, onSubmit, onCancel, isPending, error }) {
+  const { t } = useTranslation()
   const {
     register,
     handleSubmit,
@@ -43,19 +45,19 @@ function ItemForm({ initialData, onSubmit, onCancel, isPending, error }) {
         </div>
       )}
 
-      <FormField label="Sertifikat nomi *" error={errors.name?.message}>
+      <FormField label={`${t('resume.cert_name')} *`} error={errors.name?.message}>
         <Input
-          placeholder="Masalan: Python Developer Certificate"
+          placeholder={t('resume.cert_name_ph')}
           error={!!errors.name}
           {...register('name')}
         />
       </FormField>
 
-      <FormField label="Berilgan sana *" error={errors.issued_date?.message}>
+      <FormField label={`${t('resume.cert_date')} *`} error={errors.issued_date?.message}>
         <Input type="date" error={!!errors.issued_date} {...register('issued_date')} />
       </FormField>
 
-      <FormField label="Fayl yoki link (URL)" error={errors.file_url?.message}>
+      <FormField label={t('resume.cert_file_url')} error={errors.file_url?.message}>
         <Input
           type="url"
           placeholder="https://..."
@@ -66,10 +68,10 @@ function ItemForm({ initialData, onSubmit, onCancel, isPending, error }) {
 
       <div className="flex gap-2 justify-end">
         <Button type="button" variant="secondary" size="sm" onClick={onCancel}>
-          Bekor qilish
+          {t('common.cancel')}
         </Button>
         <Button type="submit" size="sm" loading={isPending}>
-          Saqlash
+          {t('common.save')}
         </Button>
       </div>
     </form>
@@ -77,13 +79,14 @@ function ItemForm({ initialData, onSubmit, onCancel, isPending, error }) {
 }
 
 function ItemCard({ item, onEdit, onDelete, isDeleting }) {
+  const { t } = useTranslation()
   return (
     <div className="bg-white border border-gray-200 rounded-xl p-5">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <h3 className="font-semibold text-gray-900">{item.name}</h3>
           <p className="text-xs text-gray-500 mt-1">
-            Berilgan: {formatDate(item.issued_date)}
+            {t('resume.cert_issued_prefix')}: {formatDate(item.issued_date)}
           </p>
           {item.file_url && (
             <a
@@ -93,7 +96,7 @@ function ItemCard({ item, onEdit, onDelete, isDeleting }) {
               className="inline-flex items-center gap-1 text-sm text-brand-500 hover:underline mt-2"
             >
               <ExternalLink className="w-3.5 h-3.5" />
-              Sertifikatga o'tish
+              {t('resume.cert_open')}
             </a>
           )}
         </div>
@@ -101,7 +104,7 @@ function ItemCard({ item, onEdit, onDelete, isDeleting }) {
           <button
             type="button"
             onClick={onEdit}
-            aria-label="Tahrirlash"
+            aria-label={t('common.edit')}
             className="p-2 rounded-lg text-gray-500 hover:text-brand-500 hover:bg-gray-50 transition"
           >
             <Pencil className="w-4 h-4" />
@@ -110,7 +113,7 @@ function ItemCard({ item, onEdit, onDelete, isDeleting }) {
             type="button"
             onClick={onDelete}
             disabled={isDeleting}
-            aria-label="O'chirish"
+            aria-label={t('common.delete')}
             className="p-2 rounded-lg text-gray-500 hover:text-red-500 hover:bg-red-50 transition disabled:opacity-40"
           >
             <Trash2 className="w-4 h-4" />
@@ -122,6 +125,7 @@ function ItemCard({ item, onEdit, onDelete, isDeleting }) {
 }
 
 function CertificateSection() {
+  const { t } = useTranslation()
   const { data: items = [], isLoading } = certificateHooks.useList()
   const create = certificateHooks.useCreate()
   const update = certificateHooks.useUpdate()
@@ -145,7 +149,7 @@ function CertificateSection() {
   }
 
   const handleDelete = (id) => {
-    if (!window.confirm('Ushbu sertifikatni o\'chirishni tasdiqlaysizmi?')) return
+    if (!window.confirm(t('resume.confirm_delete_cert'))) return
     remove.mutate(id)
   }
 
@@ -154,19 +158,19 @@ function CertificateSection() {
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-2">
           <Award className="w-5 h-5 text-brand-500" />
-          <h2 className="text-lg font-semibold text-gray-900">Sertifikatlar</h2>
+          <h2 className="text-lg font-semibold text-gray-900">{t('resume.cert_title')}</h2>
         </div>
         {!adding && (
           <Button size="sm" variant="outline" onClick={() => { setAdding(true); setEditingId(null) }}>
-            <Plus className="w-4 h-4" /> Qo'shish
+            <Plus className="w-4 h-4" /> {t('resume.btn_add')}
           </Button>
         )}
       </div>
 
-      {isLoading && <p className="text-sm text-gray-500">Yuklanmoqda...</p>}
+      {isLoading && <p className="text-sm text-gray-500">{t('common.loading')}</p>}
 
       {!isLoading && items.length === 0 && !adding && (
-        <p className="text-sm text-gray-500 italic">Hali sertifikat qo'shilmagan</p>
+        <p className="text-sm text-gray-500 italic">{t('resume.cert_empty')}</p>
       )}
 
       <div className="space-y-3">

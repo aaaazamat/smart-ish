@@ -6,13 +6,9 @@ import {
 import {
   useEmployerApplications,
   useEmployerApplicationStats,
-  useUpdateApplicationStatus,
 } from '@/hooks/useEmployer'
 import { useEmployerVacancies } from '@/hooks/useEmployer'
-import {
-  EMPLOYER_STATUS_TRANSITIONS,
-  APPLICATION_STATUS_COLORS,
-} from '@/lib/constants'
+import { APPLICATION_STATUS_COLORS } from '@/lib/constants'
 import { formatDate } from '@/lib/format'
 import { cn } from '@/lib/cn'
 
@@ -41,35 +37,7 @@ function StatChip({ label, value, color, active, onClick }) {
   )
 }
 
-function StatusUpdater({ app, onUpdate, isPending }) {
-  const handleChange = (e) => {
-    const value = e.target.value
-    if (!value || value === app.status) return
-    if (window.confirm(`Holatni "${EMPLOYER_STATUS_TRANSITIONS.find(s => s.value === value)?.label}" ga o'zgartirishni tasdiqlaysizmi?`)) {
-      onUpdate(app.id, value)
-    }
-    e.target.value = ''
-  }
-
-  return (
-    <div className="relative inline-block">
-      <select
-        onChange={handleChange}
-        disabled={isPending}
-        defaultValue=""
-        className="appearance-none pl-3 pr-8 py-1.5 text-xs font-medium bg-white border border-gray-200 rounded-lg text-gray-700 hover:border-brand-400 cursor-pointer disabled:opacity-50"
-      >
-        <option value="" disabled>Holatni o'zgartirish</option>
-        {EMPLOYER_STATUS_TRANSITIONS.filter((s) => s.value !== app.status).map((s) => (
-          <option key={s.value} value={s.value}>{s.label}</option>
-        ))}
-      </select>
-      <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
-    </div>
-  )
-}
-
-function ApplicationCard({ app, onUpdateStatus, isPending }) {
+function ApplicationCard({ app }) {
   const statusColor = APPLICATION_STATUS_COLORS[app.status] || 'bg-gray-100 text-gray-700'
 
   return (
@@ -114,16 +82,13 @@ function ApplicationCard({ app, onUpdateStatus, isPending }) {
             {formatDate(app.applied_at)}
           </span>
         </div>
-        <div className="flex items-center gap-2">
-          <Link
-            to={`/employer/applications/${app.id}`}
-            className="inline-flex items-center gap-1 text-xs text-brand-500 hover:underline"
-          >
-            <ExternalLink className="w-3.5 h-3.5" />
-            Rezyumeni ko'rish
-          </Link>
-          <StatusUpdater app={app} onUpdate={onUpdateStatus} isPending={isPending} />
-        </div>
+        <Link
+          to={`/employer/applications/${app.id}`}
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-brand-500 hover:underline"
+        >
+          <ExternalLink className="w-4 h-4" />
+          Rezyumeni ko'rib chiqish
+        </Link>
       </div>
     </div>
   )
@@ -143,17 +108,12 @@ function EmployerApplicationsPage() {
   const { data, isLoading, isError, error } = useEmployerApplications(params)
   const { data: stats } = useEmployerApplicationStats()
   const { data: vacancies = [] } = useEmployerVacancies()
-  const updateStatus = useUpdateApplicationStatus()
 
   const setFilter = (key, value) => {
     const next = new URLSearchParams(searchParams)
     if (value) next.set(key, value)
     else next.delete(key)
     setSearchParams(next)
-  }
-
-  const handleUpdateStatus = (id, newStatus) => {
-    updateStatus.mutate({ id, status: newStatus })
   }
 
   const items = data?.results || []
@@ -229,8 +189,6 @@ function EmployerApplicationsPage() {
               <ApplicationCard
                 key={app.id}
                 app={app}
-                onUpdateStatus={handleUpdateStatus}
-                isPending={updateStatus.isPending}
               />
             ))}
           </div>

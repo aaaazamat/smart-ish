@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
+import { useTranslation } from 'react-i18next'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Plus, Pencil, Trash2, GraduationCap } from 'lucide-react'
 import { educationHooks } from '@/hooks/useResume'
@@ -14,6 +15,7 @@ import Checkbox from '@/components/ui/Checkbox'
 import FormField from '@/components/ui/FormField'
 
 function ItemForm({ initialData, onSubmit, onCancel, isPending, error }) {
+  const { t } = useTranslation()
   const {
     register,
     handleSubmit,
@@ -60,27 +62,27 @@ function ItemForm({ initialData, onSubmit, onCancel, isPending, error }) {
         </div>
       )}
 
-      <FormField label="Daraja *" error={errors.degree_level?.message}>
+      <FormField label={`${t('resume.edu_level')} *`} error={errors.degree_level?.message}>
         <Select error={!!errors.degree_level} {...register('degree_level')}>
-          <option value="">Tanlang</option>
+          <option value="">{t('resume.select')}</option>
           {DEGREE_LEVEL_OPTIONS.map((o) => (
             <option key={o.value} value={o.value}>{o.label}</option>
           ))}
         </Select>
       </FormField>
 
-      <FormField label="O'quv muassasasi" error={errors.university?.message}>
+      <FormField label={t('resume.edu_university')} error={errors.university?.message}>
         <Select error={!!errors.university} {...register('university')}>
-          <option value="">Tanlang</option>
+          <option value="">{t('resume.select')}</option>
           {universities?.map((u) => (
             <option key={u.id} value={u.id}>{u.name}</option>
           ))}
         </Select>
       </FormField>
 
-      <FormField label="Yo'nalish" error={errors.direction?.message}>
+      <FormField label={t('resume.edu_direction')} error={errors.direction?.message}>
         <Select error={!!errors.direction} disabled={!universityId} {...register('direction')}>
-          <option value="">{universityId ? 'Tanlang' : 'Avval universitetni tanlang'}</option>
+          <option value="">{universityId ? t('resume.select') : t('resume.edu_select_university_first')}</option>
           {directions?.map((d) => (
             <option key={d.id} value={d.id}>{d.name}</option>
           ))}
@@ -88,24 +90,24 @@ function ItemForm({ initialData, onSubmit, onCancel, isPending, error }) {
       </FormField>
 
       <div className="grid grid-cols-2 gap-4">
-        <FormField label="Boshlangan yil *" error={errors.start_year?.message}>
+        <FormField label={`${t('resume.edu_start_year')} *`} error={errors.start_year?.message}>
           <Input type="number" placeholder="2020" error={!!errors.start_year} {...register('start_year')} />
         </FormField>
         {!isStudying && (
-          <FormField label="Tugagan yil" error={errors.end_year?.message}>
+          <FormField label={t('resume.edu_end_year')} error={errors.end_year?.message}>
             <Input type="number" placeholder="2024" error={!!errors.end_year} {...register('end_year')} />
           </FormField>
         )}
       </div>
 
-      <Checkbox label="Hozir o'qiyapman" {...register('is_studying')} />
+      <Checkbox label={t('resume.edu_studying')} {...register('is_studying')} />
 
       <div className="flex gap-2 justify-end">
         <Button type="button" variant="secondary" size="sm" onClick={onCancel}>
-          Bekor qilish
+          {t('common.cancel')}
         </Button>
         <Button type="submit" size="sm" loading={isPending}>
-          Saqlash
+          {t('common.save')}
         </Button>
       </div>
     </form>
@@ -113,8 +115,9 @@ function ItemForm({ initialData, onSubmit, onCancel, isPending, error }) {
 }
 
 function ItemCard({ item, onEdit, onDelete, isDeleting }) {
+  const { t } = useTranslation()
   const period = item.is_studying
-    ? `${item.start_year} — Hozir`
+    ? `${item.start_year} — ${t('resume.edu_now')}`
     : `${item.start_year} — ${item.end_year || '—'}`
 
   return (
@@ -134,7 +137,7 @@ function ItemCard({ item, onEdit, onDelete, isDeleting }) {
           <button
             type="button"
             onClick={onEdit}
-            aria-label="Tahrirlash"
+            aria-label={t('common.edit')}
             className="p-2 rounded-lg text-gray-500 hover:text-brand-500 hover:bg-gray-50 transition"
           >
             <Pencil className="w-4 h-4" />
@@ -143,7 +146,7 @@ function ItemCard({ item, onEdit, onDelete, isDeleting }) {
             type="button"
             onClick={onDelete}
             disabled={isDeleting}
-            aria-label="O'chirish"
+            aria-label={t('common.delete')}
             className="p-2 rounded-lg text-gray-500 hover:text-red-500 hover:bg-red-50 transition disabled:opacity-40"
           >
             <Trash2 className="w-4 h-4" />
@@ -155,6 +158,7 @@ function ItemCard({ item, onEdit, onDelete, isDeleting }) {
 }
 
 function EducationSection() {
+  const { t } = useTranslation()
   const { data: items = [], isLoading } = educationHooks.useList()
   const create = educationHooks.useCreate()
   const update = educationHooks.useUpdate()
@@ -178,7 +182,7 @@ function EducationSection() {
   }
 
   const handleDelete = (id) => {
-    if (!window.confirm('Ushbu yozuvni o\'chirishni tasdiqlaysizmi?')) return
+    if (!window.confirm(t('resume.confirm_delete'))) return
     remove.mutate(id)
   }
 
@@ -187,19 +191,19 @@ function EducationSection() {
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-2">
           <GraduationCap className="w-5 h-5 text-brand-500" />
-          <h2 className="text-lg font-semibold text-gray-900">Ta'lim</h2>
+          <h2 className="text-lg font-semibold text-gray-900">{t('resume.edu_title')}</h2>
         </div>
         {!adding && (
           <Button size="sm" variant="outline" onClick={() => { setAdding(true); setEditingId(null) }}>
-            <Plus className="w-4 h-4" /> Qo'shish
+            <Plus className="w-4 h-4" /> {t('resume.btn_add')}
           </Button>
         )}
       </div>
 
-      {isLoading && <p className="text-sm text-gray-500">Yuklanmoqda...</p>}
+      {isLoading && <p className="text-sm text-gray-500">{t('common.loading')}</p>}
 
       {!isLoading && items.length === 0 && !adding && (
-        <p className="text-sm text-gray-500 italic">Hali ta'lim ma'lumoti qo'shilmagan</p>
+        <p className="text-sm text-gray-500 italic">{t('resume.edu_empty')}</p>
       )}
 
       <div className="space-y-3">

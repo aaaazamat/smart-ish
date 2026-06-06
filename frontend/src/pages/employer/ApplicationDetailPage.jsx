@@ -2,14 +2,15 @@ import { useEffect } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import {
   ArrowLeft, Loader2, AlertCircle, Phone, Mail, MapPin,
-  Briefcase, GraduationCap, Award, Calendar, User,
+  Briefcase, GraduationCap, Award, Calendar, User, Send, CheckCircle2,
 } from 'lucide-react'
 import {
   useEmployerApplicationDetail,
   useUpdateApplicationStatus,
 } from '@/hooks/useEmployer'
 import {
-  EMPLOYER_STATUS_TRANSITIONS,
+  EMPLOYER_NEXT_ACTIONS,
+  APPLICATION_ACTION_LABELS,
   APPLICATION_STATUS_COLORS,
 } from '@/lib/constants'
 import { formatDate } from '@/lib/format'
@@ -234,25 +235,75 @@ function EmployerApplicationDetailPage() {
               {app.status_display}
             </span>
 
-            <div className="text-xs text-gray-500 mb-2 mt-4">Holatni o'zgartirish</div>
-            <div className="space-y-2">
-              {EMPLOYER_STATUS_TRANSITIONS.filter((s) => s.value !== app.status).map((s) => (
-                <Button
-                  key={s.value}
-                  variant={s.value === 'rejected' ? 'secondary' : s.value === 'hired' ? 'primary' : 'outline'}
-                  size="sm"
-                  className="w-full justify-start"
-                  loading={updateStatus.isPending}
-                  onClick={() => {
-                    if (window.confirm(`Holatni "${s.label}" ga o'zgartirasizmi?`)) {
-                      updateStatus.mutate({ id: app.id, status: s.value })
-                    }
-                  }}
-                >
-                  {s.label}
-                </Button>
-              ))}
-            </div>
+            {(() => {
+              const actions = EMPLOYER_NEXT_ACTIONS[app.status] || []
+              const showContact = ['accepted', 'interview', 'hired'].includes(app.status)
+              const phone = r?.phone_number
+
+              return (
+                <>
+                  {/* Qabul qilingandan keyin — nomzod bilan bog'lanish */}
+                  {showContact && phone && (
+                    <div className="mt-2 mb-4 p-3 bg-brand-50 border border-brand-100 rounded-lg">
+                      <div className="text-xs font-medium text-brand-700 mb-2">
+                        Nomzod bilan bog'laning
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        <a
+                          href={`tel:${phone}`}
+                          className="inline-flex items-center gap-2 text-sm text-gray-800 hover:text-brand-600"
+                        >
+                          <Phone className="w-4 h-4 text-brand-500" /> {phone}
+                        </a>
+                        <a
+                          href={`https://t.me/+${phone.replace(/[^0-9]/g, '')}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-2 text-sm text-gray-800 hover:text-brand-600"
+                        >
+                          <Send className="w-4 h-4 text-brand-500" /> Telegram orqali yozish
+                        </a>
+                      </div>
+                    </div>
+                  )}
+
+                  {actions.length > 0 ? (
+                    <>
+                      <div className="text-xs text-gray-500 mb-2 mt-4">Keyingi bosqich</div>
+                      <div className="space-y-2">
+                        {actions.map((value) => (
+                          <Button
+                            key={value}
+                            variant={value === 'rejected' ? 'secondary' : value === 'hired' ? 'primary' : 'outline'}
+                            size="sm"
+                            className="w-full justify-start"
+                            loading={updateStatus.isPending}
+                            onClick={() => {
+                              if (window.confirm(`"${APPLICATION_ACTION_LABELS[value]}" amalini tasdiqlaysizmi?`)) {
+                                updateStatus.mutate({ id: app.id, status: value })
+                              }
+                            }}
+                          >
+                            {APPLICATION_ACTION_LABELS[value]}
+                          </Button>
+                        ))}
+                      </div>
+                    </>
+                  ) : (
+                    <div className="mt-4 flex items-start gap-2 text-sm text-gray-500">
+                      <CheckCircle2 className="w-4 h-4 text-gray-400 shrink-0 mt-0.5" />
+                      <span>
+                        {app.status === 'hired'
+                          ? 'Nomzod ishga qabul qilindi. Ariza yakunlandi.'
+                          : app.status === 'rejected'
+                            ? 'Ariza rad etildi.'
+                            : "Bu ariza bo'yicha amal yo'q."}
+                      </span>
+                    </div>
+                  )}
+                </>
+              )
+            })()}
           </div>
         </aside>
       </div>

@@ -8,6 +8,7 @@ Asosiy funksiya: parse_resume(uploaded_file) -> dict
 import json
 import logging
 import re
+from datetime import date
 from difflib import SequenceMatcher
 
 from django.conf import settings
@@ -15,7 +16,7 @@ from django.conf import settings
 from .ai_services import _call_gemini, AIServiceError
 from .translation_service import _translate_keys
 from .models import (
-    Profession, Region, Skill, University, UniversityDirection,
+    Profession, Region, District, Skill, University, UniversityDirection,
 )
 
 logger = logging.getLogger(__name__)
@@ -120,6 +121,8 @@ JSON sxemasi (maydon yo'q bo'lsa null yoki bo'sh massiv):
   "first_name": "ism",
   "last_name": "familiya",
   "middle_name": "otasining ismi yoki bo'sh",
+  "birth_date": "YYYY-MM-DD yoki null",
+  "gender": "male|female yoki null",
   "phone_number": "+998XXXXXXXXX yoki null",
   "email": "email yoki null",
   "profession": "kasb/lavozim nomi",
@@ -127,6 +130,10 @@ JSON sxemasi (maydon yo'q bo'lsa null yoki bo'sh massiv):
   "career_level": "beginner|junior|middle|fresh_graduate|experienced",
   "expected_salary": null yoki son (so'mda),
   "region": "viloyat/shahar nomi yoki null",
+  "district": "tuman/shahar nomi yoki null",
+  "employment_type": "permanent|seasonal|daily yoki null",
+  "work_mode": "office|shift|remote|hybrid|freelance yoki null",
+  "employment_status": "actively_looking|open_to_offers|not_looking yoki null",
   "skills": ["ko'nikma1", "ko'nikma2"],
   "work_experiences": [
     {"position":"lavozim","organization_name":"kompaniya","start_year":2021,"start_month":1,"end_year":2023,"end_month":12,"is_current":false,"responsibilities":"vazifa/yutuqlar"}
@@ -135,7 +142,7 @@ JSON sxemasi (maydon yo'q bo'lsa null yoki bo'sh massiv):
     {"degree_level":"secondary_special|bachelor|master|phd","university":"OTM to'liq nomi","direction":"yo'nalish/mutaxassislik","start_year":2017,"end_year":2021,"is_studying":false}
   ],
   "languages": [
-    {"language":"uz|ru|en|tr|ko|zh|de|ja|ar","level":"A1|A2|B1|B2|C1|C2"}
+    {"language":"uz|ru|en|tr|ko|zh|de|ja|ar|kaa|kk|ky|tg|hi|es|fr|pt|ur|id","level":"A1|A2|B1|B2|C1|C2"}
   ],
   "certificates": [
     {"name":"sertifikat/kurs nomi","issued_date":"YYYY-MM-DD yoki null"}
@@ -151,6 +158,18 @@ Qoidalar:
   5+→experienced, yangi bitiruvchi→fresh_graduate).
 - degree_level: "bakalavr/bachelor"→bachelor, "magistr/master"→master,
   "PhD/doktor"→phd, "o'rta maxsus/kollej"→secondary_special.
+- birth_date: "tug'ilgan sana/date of birth/дата рождения" dan ol; faqat aniq
+  ko'rsatilgan bo'lsa "YYYY-MM-DD" formatida qaytar, aks holda null.
+- gender: FAQAT matnda aniq yozilgan bo'lsa ("jins/пол/gender": erkak/male/
+  мужской→male, ayol/female/женский→female). Ism yoki otasining ismidan TAXMIN
+  QILMA — noaniq bo'lsa null qoldir.
+- employment_type: "doimiy/постоянная/permanent"→permanent, "mavsumiy/seasonal"
+  →seasonal, "kunlik/daily"→daily.
+- work_mode: "ofis/office"→office, "masofaviy/remote/удалённо"→remote, "gibrid/
+  hybrid"→hybrid, "smenali/shift"→shift, "frilans/freelance"→freelance.
+- employment_status: "faol qidirmoqda/ish qidiryapman"→actively_looking,
+  "takliflarga ochiq/open to offers"→open_to_offers, "qidirmayapti"→not_looking.
+  Noaniq bo'lsa null.
 - Telefonni +998XXXXXXXXX formatiga keltir.
 - responsibilities: vazifa va yutuqlarni qisqa, bitta matnda birlashtir.
 
@@ -252,6 +271,7 @@ def parse_heuristic(text: str) -> dict:
     lines = [l.strip() for l in text.split("\n") if l.strip()]
     data = {
         "first_name": "", "last_name": "", "middle_name": "",
+        "birth_date": None, "gender": None,
         "phone_number": None, "email": None,
         "profession": "", "profession_detail": "",
         "career_level": "junior", "expected_salary": None, "region": None,
@@ -281,6 +301,20 @@ def parse_heuristic(text: str) -> dict:
     email = re.search(r"[\w.\-]+@[\w\-]+\.\w+", full)
     if email:
         data["email"] = email.group()
+    # Tug'ilgan sana (YYYY-MM-DD yoki DD.MM.YYYY) — oraliq _apply_fk_mapping'da tekshiriladi
+    bd = re.search(r"\b(\d{4})[-./](\d{1,2})[-./](\d{1,2})\b", full)
+    if bd:
+        data["birth_date"] = f"{bd.group(1)}-{int(bd.group(2)):02d}-{int(bd.group(3)):02d}"
+    else:
+        bd2 = re.search(r"\b(\d{1,2})[.](\d{1,2})[.](\d{4})\b", full)
+        if bd2:
+            data["birth_date"] = f"{bd2.group(3)}-{int(bd2.group(2)):02d}-{int(bd2.group(1)):02d}"
+    # Jins (faqat aniq kalit so'z bo'lsa)
+    low_full = full.lower()
+    if any(w in low_full for w in ("ayol", "женщ", "female")):
+        data["gender"] = "female"
+    elif any(w in low_full for w in ("erkak", "мужч", "male")):
+        data["gender"] = "male"
 
     # Bo'limlarga ajratish
     sections = {}
@@ -375,6 +409,17 @@ def match_region(name):
     return _best_match(name, Region.objects.values_list("id", "name"))
 
 
+def match_district(name, region_id):
+    """Tuman nomini region ichida moslaydi (yangi yozuv yaratmaydi)."""
+    nm = (name or "").strip()
+    if not nm:
+        return None
+    qs = District.objects.all()
+    if region_id:
+        qs = qs.filter(region_id=region_id)
+    return _best_match(nm, qs.values_list("id", "name"))
+
+
 def match_skills(names):
     """Ko'nikma nomlarini ID'larga moslaydi; topilmaganini yaratadi."""
     ids = []
@@ -423,6 +468,11 @@ _VALID_DEGREE = {"secondary_special", "bachelor", "master", "phd"}
 _VALID_LANG = {"uz", "ru", "en", "tr", "ko", "zh", "de", "ja", "hi", "es",
                "fr", "pt", "ur", "id", "kaa", "tg", "kk", "ky", "ar"}
 _VALID_LEVEL = {"A1", "A2", "B1", "B2", "C1", "C2"}
+_VALID_GENDER = {"male", "female"}
+_VALID_EMP_TYPE = {"permanent", "seasonal", "daily"}
+_VALID_WORK_MODE = {"office", "shift", "remote", "hybrid", "freelance"}
+_VALID_EMP_STATUS = {"actively_looking", "open_to_offers", "not_looking"}
+_MAX_SALARY = 1_000_000_000  # mantiqiy yuqori chegara (so'm)
 
 
 def _apply_fk_mapping(parsed: dict) -> dict:
@@ -433,9 +483,28 @@ def _apply_fk_mapping(parsed: dict) -> dict:
     if out.get("career_level") not in _VALID_CAREER:
         out["career_level"] = "junior"
 
-    # Profession / Region → ID
+    # gender — faqat yaroqli bo'lsa qoldiriladi (aks holda None → view default)
+    g = (parsed.get("gender") or "").strip().lower()
+    out["gender"] = g if g in _VALID_GENDER else None
+
+    # birth_date — normalizatsiya + mantiqiy oraliq
+    out["birth_date"] = _normalize_birth_date(parsed.get("birth_date"))
+
+    # Ish sharoiti choice'lari — yaroqli bo'lsa qoldiriladi, aks holda None
+    et = (parsed.get("employment_type") or "").strip().lower()
+    out["employment_type"] = et if et in _VALID_EMP_TYPE else None
+    wm = (parsed.get("work_mode") or "").strip().lower()
+    out["work_mode"] = wm if wm in _VALID_WORK_MODE else None
+    es = (parsed.get("employment_status") or "").strip().lower()
+    out["employment_status"] = es if es in _VALID_EMP_STATUS else None
+
+    # expected_salary — mantiqiy chegara
+    out["expected_salary"] = _normalize_salary(parsed.get("expected_salary"))
+
+    # Profession / Region / District → ID
     out["profession_id"] = match_profession(parsed.get("profession"))
     out["region_id"] = match_region(parsed.get("region"))
+    out["district_id"] = match_district(parsed.get("district"), out["region_id"])
 
     # Skills → ID ro'yxati
     out["skill_ids"] = match_skills(parsed.get("skills"))
@@ -490,3 +559,31 @@ def _normalize_date(raw):
     if m:
         return f"{m.group(1)}-01-01"  # faqat yil bo'lsa
     return None
+
+
+def _normalize_birth_date(raw):
+    """Tug'ilgan sanani 'YYYY-MM-DD' ga keltiradi va mantiqiy oraliqni tekshiradi.
+
+    Yaroqli yil oralig'i: 1945 .. (bugun - 14 yil). Aks holda None (view default'i).
+    """
+    s = _normalize_date(raw)
+    if not s:
+        return None
+    try:
+        d = date.fromisoformat(s)
+    except ValueError:
+        return None
+    if 1945 <= d.year <= (date.today().year - 14):
+        return s
+    return None
+
+
+def _normalize_salary(raw):
+    """Kutilayotgan maoshni musbat, mantiqiy son qiladi (None agar yaroqsiz)."""
+    if raw in (None, ""):
+        return None
+    try:
+        val = int(float(str(raw).replace(" ", "").replace(",", "")))
+    except (TypeError, ValueError):
+        return None
+    return val if 0 < val < _MAX_SALARY else None
