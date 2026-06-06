@@ -511,6 +511,8 @@ class AdminStatsOverviewView(APIView):
             "applications": {
                 "total": Application.objects.count(),
                 "pending": Application.objects.filter(status=S.PENDING).count(),
+                "viewed": Application.objects.filter(status=S.VIEWED).count(),
+                "accepted": Application.objects.filter(status=S.ACCEPTED).count(),
                 "interview": Application.objects.filter(status=S.INTERVIEW).count(),
                 "hired": Application.objects.filter(status=S.HIRED).count(),
                 "rejected": Application.objects.filter(status=S.REJECTED).count(),

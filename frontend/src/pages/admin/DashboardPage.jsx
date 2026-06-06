@@ -8,6 +8,7 @@ import { adminApi } from '@/api/endpoints'
 import { useAuthStore } from '@/store/authStore'
 import { formatNumber } from '@/lib/format'
 import { StatCardSkeleton } from '@/components/ui/Skeletons'
+import DashboardCharts from '@/components/admin/DashboardCharts'
 
 function StatCard({ icon: Icon, label, value, color = 'brand', sub, to }) {
   const colors = {
@@ -101,6 +102,8 @@ function AdminDashboardPage() {
           <p className="text-sm text-gray-500">Platforma umumiy ko'rsatkichlari</p>
         </div>
       </div>
+
+      <DashboardCharts overview={data} />
 
       <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
         Foydalanuvchilar

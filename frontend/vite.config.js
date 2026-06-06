@@ -73,6 +73,13 @@ export default defineConfig({
             if (id.includes('i18next') || id.includes('react-i18next')) {
               return 'vendor-i18n'
             }
+            // Diagrammalar (recharts + d3) — faqat admin dashboard'da kerak,
+            // shuning uchun alohida chunk (oddiy foydalanuvchi yuklamaydi).
+            if (id.includes('recharts') || id.includes('victory-vendor') ||
+                id.includes('d3-') || id.includes('react-smooth') ||
+                id.includes('internmap')) {
+              return 'vendor-charts'
+            }
             // Qolgan barcha node_modules — yagona vendor
             return 'vendor-other'
           }
