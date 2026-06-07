@@ -110,3 +110,4 @@ rewrite_section1.py
 generate_diploma.js
 _test_*.py
 config/_test_*.py
+frontend/public/sitemap.xml
