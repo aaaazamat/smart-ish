@@ -15,6 +15,7 @@ import ApplyModal from '@/components/vacancy/ApplyModal'
 import MatchCard from '@/components/ai/MatchCard'
 import { useMyResume } from '@/hooks/useResume'
 import { VacancyDetailSkeleton } from '@/components/ui/Skeletons'
+import Seo from '@/components/seo/Seo'
 
 function InfoItem({ icon: Icon, label, value }) {
   if (!value) return null
@@ -99,8 +100,18 @@ function VacancyDetailPage() {
   const ageRange = v.age_from && v.age_to ? `${v.age_from} - ${v.age_to} yosh`
     : v.age_from ? `${v.age_from} yoshdan` : v.age_to ? `${v.age_to} yoshgacha` : null
 
+  const seoTitle = [v.profession_name, v.organization?.name].filter(Boolean).join(' — ')
+  const seoDesc = (v.description || '').replace(/\s+/g, ' ').trim().slice(0, 200)
+    || `${v.profession_name || 'Vakansiya'}${v.region_name ? ', ' + v.region_name : ''}. SmartIsh'da ariza bering.`
+
   return (
     <div className="max-w-[1400px] mx-auto px-6 py-6">
+      <Seo
+        title={seoTitle || 'Vakansiya'}
+        description={seoDesc}
+        path={`/vacancies/${v.id}`}
+        image={v.organization?.logo}
+      />
       <Link to="/" className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-brand-500 mb-4 transition">
         <ArrowLeft className="w-4 h-4" /> Vakansiyalarga qaytish
       </Link>

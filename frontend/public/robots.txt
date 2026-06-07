@@ -1,0 +1,15 @@
+User-agent: *
+Allow: /
+
+# Shaxsiy / autentifikatsiya talab qiladigan sahifalar — indekslanmaydi
+Disallow: /login
+Disallow: /register
+Disallow: /profile
+Disallow: /notifications
+Disallow: /applications
+Disallow: /resumes/my
+Disallow: /vacancies/liked
+Disallow: /employer/
+Disallow: /admin/
+
+Sitemap: https://smart-ish.vercel.app/sitemap.xml

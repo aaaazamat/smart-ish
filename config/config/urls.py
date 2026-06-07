@@ -9,9 +9,14 @@ from drf_spectacular.views import (
     SpectacularRedocView,
 )
 
+from main_project_app.sitemap_views import sitemap_xml
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('main_project_app.urls')),
+
+    # SEO — sitemap (Vercel rewrite orqali frontend domenida ko'rinadi)
+    path('sitemap.xml', sitemap_xml, name='sitemap'),
 
     # OpenAPI schema
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),

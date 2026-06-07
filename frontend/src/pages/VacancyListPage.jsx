@@ -9,6 +9,7 @@ import { useMyResume } from '@/hooks/useResume'
 import VacancyCard from '@/components/vacancy/VacancyCard'
 import FilterPanel from '@/components/vacancy/FilterPanel'
 import AiRecommendedVacancies from '@/components/ai/AiRecommendedVacancies'
+import Seo from '@/components/seo/Seo'
 
 const FILTER_KEYS = ['region', 'district', 'profession', 'industry']
 
@@ -99,6 +100,11 @@ function VacancyListPage() {
 
   return (
     <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-6 sm:py-8">
+      <Seo
+        title="Vakansiyalar"
+        description="O'zbekistondagi minglab ish o'rinlari. Kasb, hudud va maosh bo'yicha qidiring va ariza yuboring."
+        path="/vacancies"
+      />
       <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-4 sm:mb-6">{t('vacancy.page_title')}</h1>
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4 sm:gap-6">

@@ -10,6 +10,7 @@ import { useRegions, useDistricts, useProfessions } from '@/hooks/useReferences'
 import { CAREER_LEVEL_OPTIONS } from '@/lib/constants'
 import { formatNumber, formatDate } from '@/lib/format'
 import { SkeletonList, ResumeCardSkeleton } from '@/components/ui/Skeletons'
+import Seo from '@/components/seo/Seo'
 
 function FilterSelect({ label, value, onChange, options, placeholder, disabled }) {
   return (
@@ -136,6 +137,11 @@ function ResumeListPage() {
 
   return (
     <div className="max-w-[1300px] mx-auto px-4 sm:px-6 py-6 sm:py-8">
+      <Seo
+        title="Rezyumelar"
+        description="Malakali nomzodlar rezyumelari. Ish beruvchilar uchun kasb va hudud bo'yicha nomzod qidiring."
+        path="/resumes"
+      />
       <h1 className="text-4xl font-bold text-gray-900 mb-6">{t('resume.page_title')}</h1>
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6">

@@ -15,6 +15,7 @@ import { cn } from '@/lib/cn'
 import VacancyCard from '@/components/vacancy/VacancyCard'
 import AnimateOnScroll from '@/components/ui/AnimateOnScroll'
 import AnimatedNumber from '@/components/ui/AnimatedNumber'
+import Seo from '@/components/seo/Seo'
 
 // ─────────────────────────────────────────────
 // HERO
@@ -612,6 +613,11 @@ function HomePage() {
 
   return (
     <>
+      <Seo
+        title=""
+        description="SmartIsh — sun'iy intellekt yordamida ish izlash platformasi. O'zbekistondagi minglab vakansiyalar va nomzodlar bir joyda. Bepul ro'yxatdan o'ting."
+        path="/"
+      />
       <Hero regions={regions} />
       <StatsBar stats={{
         vacancies: vacancyCount,
