@@ -44,6 +44,54 @@ function Tag({ children, color = 'gray' }) {
   )
 }
 
+// Google for Jobs uchun JobPosting structured data (schema.org JSON-LD).
+// title, description, datePosted — majburiy; ular bo'lmasa null qaytaramiz.
+function buildJobPostingLd(v) {
+  const desc = (v?.description || '').trim()
+  if (!v || !v.profession_name || !desc || !v.created_at) return null
+
+  const EMP = { permanent: 'FULL_TIME', seasonal: 'TEMPORARY', daily: 'PER_DIEM' }
+  const ld = {
+    '@context': 'https://schema.org/',
+    '@type': 'JobPosting',
+    title: v.profession_name,
+    description: desc,
+    datePosted: v.created_at,
+    directApply: true,
+    hiringOrganization: {
+      '@type': 'Organization',
+      name: v.organization?.name || 'Tashkilot',
+      ...(v.organization?.logo ? { logo: v.organization.logo } : {}),
+      ...(v.organization?.website ? { sameAs: v.organization.website } : {}),
+    },
+    jobLocation: {
+      '@type': 'Place',
+      address: {
+        '@type': 'PostalAddress',
+        addressCountry: 'UZ',
+        ...(v.region_name ? { addressRegion: v.region_name } : {}),
+        ...(v.district_name ? { addressLocality: v.district_name } : {}),
+      },
+    },
+  }
+  if (v.expires_at) ld.validThrough = v.expires_at
+  if (v.employment_type && EMP[v.employment_type]) ld.employmentType = EMP[v.employment_type]
+  if (v.work_mode === 'remote') ld.jobLocationType = 'TELECOMMUTE'
+  if (v.salary_from || v.salary_to) {
+    ld.baseSalary = {
+      '@type': 'MonetaryAmount',
+      currency: 'UZS',
+      value: {
+        '@type': 'QuantitativeValue',
+        ...(v.salary_from ? { minValue: Number(v.salary_from) } : {}),
+        ...(v.salary_to ? { maxValue: Number(v.salary_to) } : {}),
+        unitText: 'MONTH',
+      },
+    }
+  }
+  return ld
+}
+
 function VacancyDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -103,6 +151,7 @@ function VacancyDetailPage() {
   const seoTitle = [v.profession_name, v.organization?.name].filter(Boolean).join(' — ')
   const seoDesc = (v.description || '').replace(/\s+/g, ' ').trim().slice(0, 200)
     || `${v.profession_name || 'Vakansiya'}${v.region_name ? ', ' + v.region_name : ''}. SmartIsh'da ariza bering.`
+  const jobLd = buildJobPostingLd(v)
 
   return (
     <div className="max-w-[1400px] mx-auto px-6 py-6">
@@ -111,6 +160,7 @@ function VacancyDetailPage() {
         description={seoDesc}
         path={`/vacancies/${v.id}`}
         image={v.organization?.logo}
+        jsonLd={jobLd}
       />
       <Link to="/" className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-brand-500 mb-4 transition">
         <ArrowLeft className="w-4 h-4" /> Vakansiyalarga qaytish
